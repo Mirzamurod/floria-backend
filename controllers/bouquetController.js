@@ -1,7 +1,6 @@
 import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
-import Bouquet from './../models/bouquetModel.js'
-import { Types } from 'mongoose'
+import bouquetModel from './../models/bouquetModel.js'
 
 const bouquet = {
   /**
@@ -15,9 +14,10 @@ const bouquet = {
     const filter = { userId: req.user._id }
 
     try {
-      const totalCount = await Bouquet.countDocuments(filter)
+      const totalCount = await bouquetModel.countDocuments(filter)
 
-      const bouquets = await Bouquet.find(filter)
+      const bouquets = await bouquetModel
+        .find(filter)
         .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), updatedAt: -1 })
         .limit(+limit)
         .skip(+limit * (+page - 1))
@@ -44,9 +44,10 @@ const bouquet = {
     const filter = { userId, block: false }
 
     try {
-      const totalCount = await Bouquet.countDocuments(filter)
+      const totalCount = await bouquetModel.countDocuments(filter)
 
-      const bouquets = await Bouquet.find(filter)
+      const bouquets = await bouquetModel
+        .find(filter)
         .limit(+limit)
         .skip(+limit * (+page - 1))
 
@@ -74,7 +75,7 @@ const bouquet = {
 
     try {
       const userId = req.user._id
-      await Bouquet.create({ ...req.body, userId })
+      await bouquetModel.create({ ...req.body, userId })
       res.status(201).json({ success: true, message: 'bouquet_added' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -89,7 +90,7 @@ const bouquet = {
   getBouquet: expressAsyncHandler(async (req, res) => {
     try {
       const bouquetId = req.params.id
-      const bouquet = await Bouquet.findOne({ userId: req.user._id, _id: bouquetId })
+      const bouquet = await bouquetModel.findOne({ userId: req.user._id, _id: bouquetId })
       if (bouquet) res.status(200).json({ data: bouquet })
       else res.status(400).json({ success: false, message: 'bouquet_not_found' })
     } catch (error) {
@@ -110,7 +111,7 @@ const bouquet = {
 
     try {
       const bouquetId = req.params.id
-      await Bouquet.findByIdAndUpdate(bouquetId, req.body)
+      await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
       res.status(200).json({ success: true, message: 'bouquet_edited' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -125,7 +126,7 @@ const bouquet = {
   deleteBouquet: expressAsyncHandler(async (req, res) => {
     try {
       const bouquetId = req.params.id
-      await Bouquet.findByIdAndDelete(bouquetId)
+      await bouquetModel.findByIdAndDelete(bouquetId)
       res.status(200).json({ success: true, message: 'bouquet_deleted' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })

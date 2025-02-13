@@ -1,6 +1,6 @@
 import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
-import Flower from '../models/flowerModel.js'
+import flowerModel from '../models/flowerModel.js'
 
 const flower = {
   /**
@@ -14,9 +14,10 @@ const flower = {
     const filter = { userId: req.user._id }
 
     try {
-      const totalCount = await Flower.countDocuments(filter)
+      const totalCount = await flowerModel.countDocuments(filter)
 
-      const flowers = await Flower.find(filter)
+      const flowers = await flowerModel
+        .find(filter)
         .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), updatedAt: -1 })
         .limit(+limit)
         .skip(+limit * (+page - 1))
@@ -43,9 +44,10 @@ const flower = {
     const filter = { userId, block: false }
 
     try {
-      const totalCount = await Flower.countDocuments(filter)
+      const totalCount = await flowerModel.countDocuments(filter)
 
-      const flowers = await Flower.find(filter)
+      const flowers = await flowerModel
+        .find(filter)
         .limit(+limit)
         .skip(+limit * (+page - 1))
 
@@ -73,7 +75,7 @@ const flower = {
 
     try {
       const userId = req.user._id
-      await Flower.create({ ...req.body, userId })
+      await flowerModel.create({ ...req.body, userId })
       res.status(201).json({ success: true, message: 'flower_added' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -88,7 +90,7 @@ const flower = {
   getFlower: expressAsyncHandler(async (req, res) => {
     try {
       const flowerId = req.params.id
-      const flower = await Flower.findOne({ userId: req.user._id, _id: flowerId })
+      const flower = await flowerModel.findOne({ userId: req.user._id, _id: flowerId })
       if (flower) res.status(200).json({ data: flower })
       else res.status(400).json({ success: false, message: 'flower_not_found' })
     } catch (error) {
@@ -109,7 +111,7 @@ const flower = {
 
     try {
       const flowerId = req.params.id
-      await Flower.findByIdAndUpdate(flowerId, req.body)
+      await flowerModel.findByIdAndUpdate(flowerId, req.body)
       res.status(200).json({ success: true, message: 'flower_edited' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -124,7 +126,7 @@ const flower = {
   deleteFlower: expressAsyncHandler(async (req, res) => {
     try {
       const flowerId = req.params.id
-      await Flower.findByIdAndDelete(flowerId)
+      await flowerModel.findByIdAndDelete(flowerId)
       res.status(200).json({ success: true, message: 'flower_deleted' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })

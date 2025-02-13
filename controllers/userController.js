@@ -1,5 +1,5 @@
 import expressAsyncHandler from 'express-async-handler'
-import User from './../models/userModel.js'
+import userModel from './../models/userModel.js'
 
 const user = {
   /**
@@ -9,7 +9,7 @@ const user = {
    */
   delete: expressAsyncHandler(async (req, res) => {
     if (req.user) {
-      await User.findByIdAndDelete(req.user.id)
+      await userModel.findByIdAndDelete(req.user.id)
       res.status(200).json({ success: true, message: 'user_deleted' })
     } else res.status(400).json({ success: false, message: 'user_not_found' })
   }),
@@ -25,9 +25,10 @@ const user = {
     const filter = { userId: req.user._id, role: 'client' }
 
     try {
-      const totalCount = await User.countDocuments(filter)
+      const totalCount = await userModel.countDocuments(filter)
 
-      const clients = await User.find(filter, { password: 0 })
+      const clients = await userModel
+        .find(filter, { password: 0 })
         .sort(sortValue ? { [sortName]: sortValue } : sortName)
         .limit(+limit)
         .skip(+limit * (+page - 1))
@@ -51,7 +52,7 @@ const user = {
   editTelegramKey: expressAsyncHandler(async (req, res) => {
     try {
       const userId = req.user._id
-      await User.findByIdAndUpdate(userId, {
+      await userModel.findByIdAndUpdate(userId, {
         telegramToken: req.body.telegramToken,
         telegramId: req.body.telegramId,
       })

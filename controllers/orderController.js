@@ -1,6 +1,6 @@
 import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
-import Order from '../models/orderModel.js'
+import orderModel from '../models/orderModel.js'
 
 const order = {
   /**
@@ -14,9 +14,10 @@ const order = {
     const filter = { userId: req.user._id }
 
     try {
-      const totalCount = await Order.countDocuments(filter)
+      const totalCount = await orderModel.countDocuments(filter)
 
-      const orders = await Order.find(filter)
+      const orders = await orderModel
+        .find(filter)
         .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), updatedAt: -1 })
         .limit(+limit)
         .skip(+limit * (+page - 1))
@@ -45,7 +46,7 @@ const order = {
 
     try {
       const userId = req.user._id
-      await Order.create({ ...req.body, userId })
+      await orderModel.create({ ...req.body, userId })
       res.status(201).json({ success: true, message: 'order_added' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -60,7 +61,7 @@ const order = {
   getOrder: expressAsyncHandler(async (req, res) => {
     try {
       const orderId = req.params.id
-      const order = await Order.findOne({ userId: req.user._id, _id: orderId })
+      const order = await orderModel.findOne({ userId: req.user._id, _id: orderId })
       if (order) res.status(200).json({ data: order })
       else res.status(400).json({ success: false, message: 'order_not_found' })
     } catch (error) {
@@ -81,7 +82,7 @@ const order = {
 
     try {
       const orderId = req.params.id
-      await Order.findByIdAndUpdate(orderId, req.body)
+      await orderModel.findByIdAndUpdate(orderId, req.body)
       res.status(200).json({ success: true, message: 'order_edited' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -96,7 +97,7 @@ const order = {
   deleteOrder: expressAsyncHandler(async (req, res) => {
     try {
       const orderId = req.params.id
-      await Order.findByIdAndDelete(orderId)
+      await orderModel.findByIdAndDelete(orderId)
       res.status(200).json({ success: true, message: 'order_deleted' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
