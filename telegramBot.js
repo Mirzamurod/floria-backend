@@ -38,7 +38,7 @@ const createBot = async (telegramToken, _id) => {
                 {
                   text: "Buketlarni ko'rish",
                   web_app: {
-                    url: `https://4d06-213-230-116-47.ngrok-free.app/orders/${_id}`,
+                    url: `https://tangerine-bavarois-85ba17.netlify.app/orders/${_id}`,
                   },
                 },
               ],
@@ -52,6 +52,8 @@ const createBot = async (telegramToken, _id) => {
     if (msg.web_app_data?.data) {
       try {
         const data = JSON.parse(msg.web_app_data?.data)
+        console.log(msg.web_app_data?.data)
+        console.log('data', data)
 
         await bot.sendMessage(
           chatId,
