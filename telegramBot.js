@@ -3,6 +3,10 @@ import User from './models/userModel.js'
 
 const bots = {} // Xotirada botlarni saqlash
 
+const getSum = sum => {
+  return `${Number(sum).toLocaleString().replaceAll(',', ' ')} so'm`
+}
+
 // ✅ Bot yaratish va saqlash
 const createBot = async (telegramToken, _id) => {
   if (bots[telegramToken]) {
@@ -60,8 +64,15 @@ const createBot = async (telegramToken, _id) => {
           "Zakazingiz qabul qilindi, siz zakaz bergan buketlar ro'yxati:"
         )
 
-        for (item of data) {
-          await bot.sendPhoto(chatId, item.image, { caption: `` })
+        if (data.bouquets) {
+          for (const item of data.bouquets) {
+            await bot.sendPhoto(chatId, item.image, { caption: getSum(item.price) })
+          }
+        }
+        if (data.flowers) {
+          for (const item of data.flowers) {
+            await bot.sendPhoto(chatId, item.image, { caption: getSum(item.price) })
+          }
         }
       } catch (error) {
         console.log(error)
