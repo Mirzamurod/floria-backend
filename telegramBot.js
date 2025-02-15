@@ -24,7 +24,6 @@ const createBot = async (telegramToken, _id) => {
     const text = msg.text
     const botName = await bot.getMe()
     const customer = await Customer.findOne({ chatId })
-    console.log(`${process.env.FRONT_URL}${_id}`)
 
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
@@ -102,25 +101,36 @@ const createBot = async (telegramToken, _id) => {
           customerId: customer._id,
         })
 
-        const getOrder = await Order.findById(createdOrder._id).populate(['bouquets'])
+        const getOrder = await Order.findById(createdOrder._id).populate([
+          { path: 'bouquets.bouquetId', model: 'Bouquet' },
+          { path: 'flowers.flowerId', model: 'Flower' },
+          { path: 'userId', model: 'User' },
+          { path: 'customerId', model: 'Customer' },
+        ])
         console.log(getOrder)
 
         await bot.sendMessage(
           chatId,
-          `#${createdOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
+          `#No${getOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
         )
 
-        if (bouquets) {
-          for (const item of bouquets) {
+        if (getOrder?.bouquets?.length) {
+          for (const item of getOrder.bouquets) {
             await bot.sendPhoto(chatId, item.image, {
-              caption: `${item.name ? item.name + ' - ' : null}${item.qty}x: ${getSum(item.price)}`,
+              caption: `${item.name ? item.name + ' - ' : ''}${item.qty}x: ${getSum(item.price)}`,
             })
           }
         }
-        if (flowers) {
-          for (const item of flowers) {
-            await bot.sendPhoto(chatId, item.image, { caption: getSum(item.price) })
+
+        if (getOrder?.flowers?.length) {
+          let data = []
+          let sum = 0
+          for (const item of getOrder.flowers) {
+            data.push(item?.flowerId?.name + ' - ' + item.qty + '\n')
+            sum += +item.price
           }
+
+          await bot.sendMessage(chatId, `${data.join(',')}\nNarxi: ${getSum(sum)}`)
         }
       } catch (error) {
         console.log(error)

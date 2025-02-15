@@ -9,6 +9,7 @@ const userSchema = new Schema(
     block: { type: Boolean, default: true },
     telegramToken: { type: String },
     telegramId: { type: String },
+    location: { type: String },
   },
   { timestamps: true }
 )

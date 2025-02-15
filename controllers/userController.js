@@ -52,10 +52,8 @@ const user = {
   editTelegramKey: expressAsyncHandler(async (req, res) => {
     try {
       const userId = req.user._id
-      await userModel.findByIdAndUpdate(userId, {
-        telegramToken: req.body.telegramToken,
-        telegramId: req.body.telegramId,
-      })
+      const { telegramToken, telegramId, location } = req.body
+      await userModel.findByIdAndUpdate(userId, { telegramToken, telegramId, location })
 
       res.status(200).json({ success: true, message: 'user_edited' })
     } catch (error) {
