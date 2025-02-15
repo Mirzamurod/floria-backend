@@ -93,7 +93,7 @@ const createBot = async (telegramToken, _id) => {
       try {
         const { bouquets, flowers } = JSON.parse(msg.web_app_data?.data)
         console.log(msg.web_app_data?.data)
-        console.log('data', data)
+        console.log('data', { bouquets, flowers })
 
         const createdOrder = await Order.create({
           bouquets,
