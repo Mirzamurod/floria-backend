@@ -1,5 +1,7 @@
 import TelegramBot from 'node-telegram-bot-api'
 import User from './models/userModel.js'
+import Customer from './models/customerModel.js'
+import Order from './models/orderModel.js'
 
 const bots = {} // Xotirada botlarni saqlash
 
@@ -15,35 +17,69 @@ const createBot = async (telegramToken, _id) => {
 
   const bot = new TelegramBot(telegramToken, { polling: true })
 
+  bot.setMyCommands([{ command: '/start', description: "Buketlar haqida ma'lumot" }])
+
   bot.on('message', async msg => {
     const chatId = msg.chat.id
     const text = msg.text
+    const botName = await bot.getMe()
+    const customer = await Customer.findOne({ chatId })
+    console.log(`${process.env.FRONT_URL}${_id}`)
 
     if (text === '/start') {
-      await bot.sendMessage(chatId, 'Flowers platformasiga xush kelibsiz.')
+      await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
 
-      await bot.sendMessage(chatId, 'Buket zakat qilishdan oldin telefon raqamingizni jo‘nating:', {
-        reply_markup: {
-          keyboard: [[{ text: "📲 Kontaktni jo'natish", request_contact: true }]],
-          one_time_keyboard: true,
-          resize_keyboard: true,
-        },
-      })
+      if (customer?.phone) {
+        await bot.sendMessage(
+          chatId,
+          "Buketlarni ko'rish knopkasini bosib buket va gullarni ko'rishingiz mumkin",
+          {
+            reply_markup: {
+              keyboard: [
+                [
+                  {
+                    text: "Buketlarni ko'rish",
+                    web_app: { url: `${process.env.FRONT_URL}${_id}` },
+                  },
+                ],
+              ],
+              resize_keyboard: true,
+            },
+          }
+        )
+      } else {
+        await bot.sendMessage(
+          chatId,
+          'Buket zakat qilishdan oldin telefon raqamingizni jo‘nating:',
+          {
+            reply_markup: {
+              keyboard: [[{ text: "📲 Kontaktni jo'natish", request_contact: true }]],
+              one_time_keyboard: true,
+              resize_keyboard: true,
+            },
+          }
+        )
+      }
     }
 
     if (msg.contact) {
+      await Customer.create({
+        chatId,
+        userId: _id,
+        name: msg.contact.first_name,
+        phone: msg.contact.phone_number,
+      })
+
       await bot.sendMessage(
         msg.chat.id,
-        `✅ Raqamingiz qabul qilindi: ${msg.contact.phone_number}. Buketlarni ko'rish knopkasini bosib buket va gullarni ko'rishingiz mumkin`,
+        `✅ Raqamingiz qabul qilindi: ${msg.contact.first_name}. Buketlarni ko'rish knopkasini bosib buket va gullarni ko'rishingiz mumkin`,
         {
           reply_markup: {
             keyboard: [
               [
                 {
                   text: "Buketlarni ko'rish",
-                  web_app: {
-                    url: `https://tangerine-bavarois-85ba17.netlify.app/orders/${_id}`,
-                  },
+                  web_app: { url: `${process.env.FRONT_URL}${_id}` },
                 },
               ],
             ],
@@ -55,22 +91,34 @@ const createBot = async (telegramToken, _id) => {
 
     if (msg.web_app_data?.data) {
       try {
-        const data = JSON.parse(msg.web_app_data?.data)
+        const { bouquets, flowers } = JSON.parse(msg.web_app_data?.data)
         console.log(msg.web_app_data?.data)
         console.log('data', data)
 
+        const createdOrder = await Order.create({
+          bouquets,
+          flowers,
+          userId: _id,
+          customerId: customer._id,
+        })
+
+        const getOrder = await Order.findById(createdOrder._id).populate(['bouquets'])
+        console.log(getOrder)
+
         await bot.sendMessage(
           chatId,
-          "Zakazingiz qabul qilindi, siz zakaz bergan buketlar ro'yxati:"
+          `#${createdOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
         )
 
-        if (data.bouquets) {
-          for (const item of data.bouquets) {
-            await bot.sendPhoto(chatId, item.image, { caption: getSum(item.price) })
+        if (bouquets) {
+          for (const item of bouquets) {
+            await bot.sendPhoto(chatId, item.image, {
+              caption: `${item.name ? item.name + ' - ' : null}${item.qty}x: ${getSum(item.price)}`,
+            })
           }
         }
-        if (data.flowers) {
-          for (const item of data.flowers) {
+        if (flowers) {
+          for (const item of flowers) {
             await bot.sendPhoto(chatId, item.image, { caption: getSum(item.price) })
           }
         }
@@ -91,13 +139,13 @@ const createBot = async (telegramToken, _id) => {
 
 // 🔄 **Server qayta ishga tushganda barcha botlarni tiklash**
 export const restoreBots = async () => {
-  const tokens = await User.find({ role: 'client', telegramToken: { $exists: true } })
+  const tokens = await User.find({ role: 'client', telegramToken: { $exists: true }, block: false })
   tokens.forEach(({ telegramToken, _id }) => {
     if (!bots[telegramToken]) createBot(telegramToken, _id)
   })
 
   Object.keys(bots).forEach(telegramToken => {
-    if (!tokens.find(t => t.telegramToken === telegramToken)) {
+    if (!tokens.some(t => t.telegramToken === telegramToken)) {
       bots[telegramToken].stopPolling()
       delete bots[telegramToken]
       console.log(`🛑 Bot to'xtatildi: ${telegramToken}`.red.bold)

@@ -2,8 +2,11 @@ import { model, Schema } from 'mongoose'
 
 const orderSchema = new Schema(
   {
-    name: { type: String },
-    phone: { type: String, require: true },
+    orderNumber: {
+      type: Number,
+      require: true,
+      default: Math.floor(100000 + Math.random() * 900000),
+    },
     bouquets: [
       {
         bouquetId: { type: Schema.Types.ObjectId, ref: 'Bouquet', require: true },
@@ -19,6 +22,7 @@ const orderSchema = new Schema(
       },
     ],
     userId: { type: Schema.Types.ObjectId, ref: 'User', require: true },
+    customerId: { type: Schema.Types.ObjectId, ref: 'Customer', require: true },
   },
   { timestamps: true }
 )
