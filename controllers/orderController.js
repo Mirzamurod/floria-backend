@@ -9,9 +9,9 @@ const order = {
    * @access  Private
    */
   getOrders: expressAsyncHandler(async (req, res) => {
-    const { limit = 20, page = 1, sortName, sortValue } = req.query
+    const { limit = 20, page = 1, sortName, sortValue, status } = req.query
 
-    const filter = { userId: req.user._id }
+    const filter = { userId: req.user._id, status }
 
     try {
       const totalCount = await orderModel.countDocuments(filter)
@@ -21,6 +21,12 @@ const order = {
         .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), updatedAt: -1 })
         .limit(+limit)
         .skip(+limit * (+page - 1))
+        .populate([
+          { path: 'bouquets.bouquetId', model: 'Bouquet' },
+          { path: 'flowers.flowerId', model: 'Flower' },
+          { path: 'userId', model: 'User' },
+          { path: 'customerId', model: 'Customer' },
+        ])
 
       res.status(200).json({
         page,
