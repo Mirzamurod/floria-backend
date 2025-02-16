@@ -94,7 +94,7 @@ const createBot = async (telegramToken, _id) => {
         console.log(msg.web_app_data?.data)
         console.log('data', data)
 
-        const createdOrder = await Order.create({ data, userId: _id, customerId: customer._id })
+        const createdOrder = await Order.create({ ...data, userId: _id, customerId: customer._id })
 
         const getOrder = await Order.findById(createdOrder._id).populate([
           { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
