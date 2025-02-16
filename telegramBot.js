@@ -28,6 +28,37 @@ const createBot = async (telegramToken, _id) => {
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
 
+      // const getOrder = await Order.findById('67b1e32643a5311cf1188672').populate([
+      //   { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
+      //   { path: 'flower.flowers.flowerId', model: 'Flower' },
+      //   { path: 'userId', model: 'User' },
+      //   { path: 'customerId', model: 'Customer' },
+      // ])
+
+      // await bot.sendMessage(
+      //   chatId,
+      //   `#No${getOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
+      // )
+
+      // if (getOrder?.bouquet?.bouquets?.length) {
+      //   for (const item of getOrder?.bouquet?.bouquets) {
+      //     await bot.sendPhoto(chatId, item?.bouquetId?.image, {
+      //       caption: `${item.name ? item.name + ' - ' : ''}${item.qty}x: ${getSum(item.price)}`,
+      //     })
+      //   }
+      // }
+
+      // if (getOrder?.flower?.flowers?.length) {
+      //   let data = []
+      //   let sum = 0
+      //   for (const item of getOrder?.flower?.flowers) {
+      //     data.push(item?.flowerId?.name + ' - ' + item.qty + 'x: ' + getSum(item.price) + '\n')
+      //     sum += +item.price
+      //   }
+
+      //   await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
+      // }
+
       if (customer?.phone) {
         await bot.sendMessage(
           chatId,
@@ -91,8 +122,6 @@ const createBot = async (telegramToken, _id) => {
     if (msg.web_app_data?.data) {
       try {
         const data = JSON.parse(msg.web_app_data?.data)
-        console.log(msg.web_app_data?.data)
-        console.log('data', data)
 
         const createdOrder = await Order.create({ ...data, userId: _id, customerId: customer._id })
 
@@ -102,30 +131,29 @@ const createBot = async (telegramToken, _id) => {
           { path: 'userId', model: 'User' },
           { path: 'customerId', model: 'Customer' },
         ])
-        console.log(getOrder)
 
         await bot.sendMessage(
           chatId,
           `#No${getOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
         )
 
-        if (getOrder?.bouquets?.length) {
-          for (const item of getOrder.bouquets) {
-            await bot.sendPhoto(chatId, item.image, {
+        if (getOrder?.bouquet?.bouquets?.length) {
+          for (const item of getOrder?.bouquet?.bouquets) {
+            await bot.sendPhoto(chatId, item?.bouquetId?.image, {
               caption: `${item.name ? item.name + ' - ' : ''}${item.qty}x: ${getSum(item.price)}`,
             })
           }
         }
 
-        if (getOrder?.flowers?.length) {
+        if (getOrder?.flower?.flowers?.length) {
           let data = []
           let sum = 0
-          for (const item of getOrder.flowers) {
-            data.push(item?.flowerId?.name + ' - ' + item.qty + '\n')
+          for (const item of getOrder?.flower?.flowers) {
+            data.push(item?.flowerId?.name + ' - ' + item.qty + 'x: ' + getSum(item.price) + '\n')
             sum += +item.price
           }
 
-          await bot.sendMessage(chatId, `${data.join(',')}\nNarxi: ${getSum(sum)}`)
+          await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
         }
       } catch (error) {
         console.log(error)
