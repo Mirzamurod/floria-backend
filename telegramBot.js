@@ -90,20 +90,15 @@ const createBot = async (telegramToken, _id) => {
 
     if (msg.web_app_data?.data) {
       try {
-        const { bouquets, flowers } = JSON.parse(msg.web_app_data?.data)
+        const data = JSON.parse(msg.web_app_data?.data)
         console.log(msg.web_app_data?.data)
-        console.log('data', { bouquets, flowers })
+        console.log('data', data)
 
-        const createdOrder = await Order.create({
-          bouquets,
-          flowers,
-          userId: _id,
-          customerId: customer._id,
-        })
+        const createdOrder = await Order.create({ data, userId: _id, customerId: customer._id })
 
         const getOrder = await Order.findById(createdOrder._id).populate([
-          { path: 'bouquets.bouquetId', model: 'Bouquet' },
-          { path: 'flowers.flowerId', model: 'Flower' },
+          { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
+          { path: 'flower.flowers.flowerId', model: 'Flower' },
           { path: 'userId', model: 'User' },
           { path: 'customerId', model: 'Customer' },
         ])
