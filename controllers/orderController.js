@@ -22,10 +22,10 @@ const order = {
         .limit(+limit)
         .skip(+limit * (+page - 1))
         .populate([
-          { path: 'bouquets.bouquetId', model: 'Bouquet' },
-          { path: 'flowers.flowerId', model: 'Flower' },
-          { path: 'userId', model: 'User' },
+          { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
+          { path: 'flower.flowers.flowerId', model: 'Flower' },
           { path: 'customerId', model: 'Customer' },
+          // { path: 'userId', model: 'User' },
         ])
 
       res.status(200).json({
@@ -67,7 +67,12 @@ const order = {
   getOrder: expressAsyncHandler(async (req, res) => {
     try {
       const orderId = req.params.id
-      const order = await orderModel.findOne({ userId: req.user._id, _id: orderId })
+      const order = await orderModel.findOne({ userId: req.user._id, _id: orderId }).populate([
+        { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
+        { path: 'flower.flowers.flowerId', model: 'Flower' },
+        { path: 'customerId', model: 'Customer' },
+        // { path: 'userId', model: 'User' },
+      ])
       if (order) res.status(200).json({ data: order })
       else res.status(400).json({ success: false, message: 'order_not_found' })
     } catch (error) {
