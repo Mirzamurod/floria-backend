@@ -9,9 +9,12 @@ const order = {
    * @access  Private
    */
   getOrders: expressAsyncHandler(async (req, res) => {
-    const { limit = 20, page = 1, sortName, sortValue, status } = req.query
+    const { limit = 20, page = 1, sortName, sortValue, status, search } = req.query
 
     const filter = { userId: req.user._id, status }
+
+    if (search)
+      filter.$expr = { $regexMatch: { input: { $toString: '$orderNumber' }, regex: search } }
 
     try {
       const totalCount = await orderModel.countDocuments(filter)
@@ -53,7 +56,7 @@ const order = {
     try {
       const userId = req.user._id
       await orderModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: 'order_added' })
+      res.status(201).json({ success: true, message: "Zakaz qo'shildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -74,7 +77,7 @@ const order = {
         // { path: 'userId', model: 'User' },
       ])
       if (order) res.status(200).json({ data: order })
-      else res.status(400).json({ success: false, message: 'order_not_found' })
+      else res.status(400).json({ success: false, message: 'Zakaz topilmadi' })
     } catch (error) {
       res.status(200).json({ success: false, message: error.message })
     }
@@ -94,7 +97,7 @@ const order = {
     try {
       const orderId = req.params.id
       await orderModel.findByIdAndUpdate(orderId, req.body)
-      res.status(200).json({ success: true, message: 'order_edited' })
+      res.status(200).json({ success: true, message: "Zakaz o'zgartirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -109,7 +112,7 @@ const order = {
     try {
       const orderId = req.params.id
       await orderModel.findByIdAndDelete(orderId)
-      res.status(200).json({ success: true, message: 'order_deleted' })
+      res.status(200).json({ success: true, message: "Zakaz o'chirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }

@@ -1,14 +1,16 @@
 import { check } from 'express-validator'
 
 export const bouquetAddField = [
-  check('image').notEmpty().withMessage('image_required').bail().trim(),
-  check('price').notEmpty().withMessage('price_required').bail().trim(),
+  check('image').notEmpty().withMessage('Rasm majburiy').bail().trim(),
+  check('price').notEmpty().withMessage('Narx majburiy').bail().trim(),
 ]
 
 export const flowerAddField = [
-  check('image').notEmpty().withMessage('image_required').bail().trim(),
-  check('price').notEmpty().withMessage('price_required').bail().trim(),
-  check('name').notEmpty().withMessage('name_required').bail().trim(),
+  check('image').notEmpty().withMessage('Rasm majburiy').bail().trim(),
+  check('price').notEmpty().withMessage('Narx majburiy').bail().trim(),
+  check('name').notEmpty().withMessage('Nomi majburiy').bail().trim(),
 ]
 
-export const orderAddField = [check('phone').notEmpty().withMessage('phone_required').bail().trim()]
+export const orderAddField = [
+  check('phone').notEmpty().withMessage('Telefon raqam majburiy').bail().trim(),
+]

@@ -9,9 +9,12 @@ const bouquet = {
    * @access  Private
    */
   getBouquets: expressAsyncHandler(async (req, res) => {
-    const { limit = 20, page = 1, sortName, sortValue } = req.query
+    const { limit = 20, page = 1, sortName, sortValue, search } = req.query
 
     const filter = { userId: req.user._id }
+
+    if (search)
+      filter.$expr = { $regexMatch: { input: { $toString: '$orderNumber' }, regex: search } }
 
     try {
       const totalCount = await bouquetModel.countDocuments(filter)
@@ -76,7 +79,7 @@ const bouquet = {
     try {
       const userId = req.user._id
       await bouquetModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: 'bouquet_added' })
+      res.status(201).json({ success: true, message: "Buket qo'shildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -92,7 +95,7 @@ const bouquet = {
       const bouquetId = req.params.id
       const bouquet = await bouquetModel.findOne({ userId: req.user._id, _id: bouquetId })
       if (bouquet) res.status(200).json({ data: bouquet })
-      else res.status(400).json({ success: false, message: 'bouquet_not_found' })
+      else res.status(400).json({ success: false, message: 'Buket topilmadi' })
     } catch (error) {
       res.status(200).json({ success: false, message: error.message })
     }
@@ -112,7 +115,7 @@ const bouquet = {
     try {
       const bouquetId = req.params.id
       await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
-      res.status(200).json({ success: true, message: 'bouquet_edited' })
+      res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -127,7 +130,7 @@ const bouquet = {
     try {
       const bouquetId = req.params.id
       await bouquetModel.findByIdAndDelete(bouquetId)
-      res.status(200).json({ success: true, message: 'bouquet_deleted' })
+      res.status(200).json({ success: true, message: "Buket o'chirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }

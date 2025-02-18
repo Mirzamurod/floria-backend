@@ -1,4 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api'
+import axios from 'axios'
 import User from './models/userModel.js'
 import Customer from './models/customerModel.js'
 import Order from './models/orderModel.js'
@@ -10,7 +11,7 @@ const getSum = sum => {
 }
 
 // ✅ Bot yaratish va saqlash
-const createBot = async (telegramToken, _id) => {
+const createBot = async (telegramToken, user) => {
   if (bots[telegramToken]) {
     return bots[telegramToken] // Agar bot allaqachon mavjud bo‘lsa, qaytaramiz
   }
@@ -28,6 +29,15 @@ const createBot = async (telegramToken, _id) => {
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
 
+      const getOrder = await Order.findOne({ _id: '67b1f33c0c1f753984334a2d', status: 'new' })
+
+      if (getOrder && user.telegramId) {
+        let my_text = `Yangi zakaz: <a href='https://tangerine-bavarois-85ba17.netlify.app/orders/view/${getOrder._id}'>zakazni ko'rish</a>`
+        await axios.post(
+          `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}&parse_mode=html`
+        )
+      }
+
       if (customer?.phone) {
         await bot.sendMessage(
           chatId,
@@ -38,7 +48,7 @@ const createBot = async (telegramToken, _id) => {
                 [
                   {
                     text: "Buketlarni ko'rish",
-                    web_app: { url: `${process.env.FRONT_URL}${_id}` },
+                    web_app: { url: `${process.env.FRONT_URL}${user._id}` },
                   },
                 ],
               ],
@@ -64,7 +74,7 @@ const createBot = async (telegramToken, _id) => {
     if (msg.contact) {
       await Customer.create({
         chatId,
-        userId: _id,
+        userId: user._id,
         name: msg.contact.first_name,
         phone: msg.contact.phone_number,
       })
@@ -78,7 +88,7 @@ const createBot = async (telegramToken, _id) => {
               [
                 {
                   text: "Buketlarni ko'rish",
-                  web_app: { url: `${process.env.FRONT_URL}${_id}` },
+                  web_app: { url: `${process.env.FRONT_URL}${user._id}` },
                 },
               ],
             ],
@@ -92,7 +102,11 @@ const createBot = async (telegramToken, _id) => {
       try {
         const data = JSON.parse(msg.web_app_data?.data)
 
-        const createdOrder = await Order.create({ ...data, userId: _id, customerId: customer._id })
+        const createdOrder = await Order.create({
+          ...data,
+          userId: user._id,
+          customerId: customer._id,
+        })
 
         const getOrder = await Order.findById(createdOrder._id).populate([
           { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
@@ -142,8 +156,8 @@ const createBot = async (telegramToken, _id) => {
 // 🔄 **Server qayta ishga tushganda barcha botlarni tiklash**
 export const restoreBots = async () => {
   const tokens = await User.find({ role: 'client', telegramToken: { $exists: true }, block: false })
-  tokens.forEach(({ telegramToken, _id }) => {
-    if (!bots[telegramToken]) createBot(telegramToken, _id)
+  tokens.forEach(({ telegramToken, telegramId, _id }) => {
+    if (!bots[telegramToken]) createBot(telegramToken, { telegramId, _id })
   })
 
   Object.keys(bots).forEach(telegramToken => {

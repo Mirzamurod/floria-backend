@@ -10,8 +10,8 @@ const user = {
   delete: expressAsyncHandler(async (req, res) => {
     if (req.user) {
       await userModel.findByIdAndDelete(req.user.id)
-      res.status(200).json({ success: true, message: 'user_deleted' })
-    } else res.status(400).json({ success: false, message: 'user_not_found' })
+      res.status(200).json({ success: true, message: "Foydalanuvchi o'chirildi" })
+    } else res.status(400).json({ success: false, message: 'Foydalanuvchi topilmadi' })
   }),
 
   /**
@@ -55,7 +55,7 @@ const user = {
       const { telegramToken, telegramId, location } = req.body
       await userModel.findByIdAndUpdate(userId, { telegramToken, telegramId, location })
 
-      res.status(200).json({ success: true, message: 'user_edited' })
+      res.status(200).json({ success: true, message: "Foydalanuvchi o'zgartirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }

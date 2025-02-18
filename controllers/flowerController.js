@@ -9,9 +9,11 @@ const flower = {
    * @access  Private
    */
   getFlowers: expressAsyncHandler(async (req, res) => {
-    const { limit = 20, page = 1, sortName, sortValue } = req.query
+    const { limit = 20, page = 1, sortName, sortValue, search } = req.query
 
     const filter = { userId: req.user._id }
+
+    if (search) filter.name = { $regex: search ?? '', $options: 'i' }
 
     try {
       const totalCount = await flowerModel.countDocuments(filter)
@@ -76,7 +78,7 @@ const flower = {
     try {
       const userId = req.user._id
       await flowerModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: 'flower_added' })
+      res.status(201).json({ success: true, message: "Gul qo'shildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -92,7 +94,7 @@ const flower = {
       const flowerId = req.params.id
       const flower = await flowerModel.findOne({ userId: req.user._id, _id: flowerId })
       if (flower) res.status(200).json({ data: flower })
-      else res.status(400).json({ success: false, message: 'flower_not_found' })
+      else res.status(400).json({ success: false, message: 'Gul topilmadi' })
     } catch (error) {
       res.status(200).json({ success: false, message: error.message })
     }
@@ -112,7 +114,7 @@ const flower = {
     try {
       const flowerId = req.params.id
       await flowerModel.findByIdAndUpdate(flowerId, req.body)
-      res.status(200).json({ success: true, message: 'flower_edited' })
+      res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -127,7 +129,7 @@ const flower = {
     try {
       const flowerId = req.params.id
       await flowerModel.findByIdAndDelete(flowerId)
-      res.status(200).json({ success: true, message: 'flower_deleted' })
+      res.status(200).json({ success: true, message: "Gul o'zgatirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
