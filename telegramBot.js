@@ -63,6 +63,8 @@ const createBot = async (telegramToken, user) => {
       }
     }
 
+    // if (msg.photo)
+
     if (msg.contact) {
       await Customer.create({
         chatId,
