@@ -14,6 +14,7 @@ router
   .get(protect, client, flower.getFlower)
   .patch(protect, client, flowerAddField, flower.editFlower)
   .delete(protect, client, flower.deleteFlower)
+router.patch('/block/:id', protect, client, flower.editFlowerBlock)
 router.get('/public/:userId', flower.getPublicFlowers)
 
 export default router

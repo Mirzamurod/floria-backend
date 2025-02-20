@@ -29,6 +29,7 @@ const orderSchema = new Schema(
       qty: { type: Number, require: true },
       price: { type: Number, require: true },
     },
+    delivery: { type: String, enum: ['delivery', 'takeaway'], default: 'takeaway' },
     status: { type: String, enum: ['new', 'old'], default: 'new' },
     userId: { type: Schema.Types.ObjectId, ref: 'User', require: true },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', require: true },

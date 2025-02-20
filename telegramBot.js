@@ -25,6 +25,7 @@ const createBot = async (telegramToken, user) => {
     const text = msg.text
     const botName = await bot.getMe()
     const customer = await Customer.findOne({ chatId })
+    const photoArray = msg.photo
 
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)

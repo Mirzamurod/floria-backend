@@ -122,6 +122,21 @@ const bouquet = {
   }),
 
   /**
+   * @desc    Edit Bouquet
+   * @route   PATCH /api/bouquets/block/:id
+   * @access  Private
+   */
+  editBouquetBlock: expressAsyncHandler(async (req, res) => {
+    try {
+      const bouquetId = req.params.id
+      await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
+      res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+  }),
+
+  /**
    * @desc    Delete Bouquet
    * @route   DELETE /api/bouquets/:id
    * @access  Private

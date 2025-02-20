@@ -121,6 +121,21 @@ const flower = {
   }),
 
   /**
+   * @desc    Edit Flower
+   * @route   PATCH /api/flowers/block/:id
+   * @access  Private
+   */
+  editFlowerBlock: expressAsyncHandler(async (req, res) => {
+    try {
+      const flowerId = req.params.id
+      await flowerModel.findByIdAndUpdate(flowerId, req.body)
+      res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+  }),
+
+  /**
    * @desc    Delete Flower
    * @route   DELETE /api/flowers/:id
    * @access  Private
