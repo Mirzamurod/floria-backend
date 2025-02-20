@@ -30,15 +30,6 @@ const createBot = async (telegramToken, user) => {
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
 
-      const getOrder = await Order.findOne({ _id: '67b1f33c0c1f753984334a2d', status: 'new' })
-
-      if (getOrder && user.telegramId) {
-        let my_text = `Yangi zakaz: <a href='https://tangerine-bavarois-85ba17.netlify.app/orders/view/${getOrder._id}'>zakazni ko'rish</a>`
-        await axios.post(
-          `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}&parse_mode=html`
-        )
-      }
-
       if (customer?.phone) {
         await bot.sendMessage(
           chatId,
@@ -138,6 +129,13 @@ const createBot = async (telegramToken, user) => {
           }
 
           await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
+        }
+
+        if (getOrder && user.telegramId) {
+          let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${getOrder._id}'>zakazni ko'rish</a>`
+          await axios.post(
+            `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}&parse_mode=html`
+          )
         }
       } catch (error) {
         console.log(error)
