@@ -4,7 +4,7 @@ import User from './models/userModel.js'
 import Customer from './models/customerModel.js'
 import Order from './models/orderModel.js'
 
-const bots = {} // Xotirada botlarni saqlash
+export const bots = {} // Xotirada botlarni saqlash
 
 const getSum = sum => {
   return `${Number(sum).toLocaleString().replaceAll(',', ' ')} so'm`
@@ -63,7 +63,11 @@ const createBot = async (telegramToken, user) => {
       }
     }
 
-    // if (msg.photo)
+    if (msg.photo) {
+      console.log('rasm id', photoArray[0].file_id)
+
+      await bot.sendMessage(chatId, await bot.getFileLink(photoArray[2].file_id))
+    }
 
     if (msg.contact) {
       await Customer.create({
@@ -96,48 +100,50 @@ const createBot = async (telegramToken, user) => {
       try {
         const data = JSON.parse(msg.web_app_data?.data)
 
-        const createdOrder = await Order.create({
-          ...data,
-          userId: user._id,
-          customerId: customer._id,
-        })
+        if (data.userId === user._id.toString()) {
+          const createdOrder = await Order.create({
+            ...data,
+            userId: data.userId,
+            customerId: customer._id,
+          })
 
-        const getOrder = await Order.findById(createdOrder._id).populate([
-          { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
-          { path: 'flower.flowers.flowerId', model: 'Flower' },
-          { path: 'userId', model: 'User' },
-          { path: 'customerId', model: 'Customer' },
-        ])
+          const getOrder = await Order.findById(createdOrder._id).populate([
+            { path: 'bouquet.bouquets.bouquetId', model: 'Bouquet' },
+            { path: 'flower.flowers.flowerId', model: 'Flower' },
+            // { path: 'userId', model: 'User' },
+            { path: 'customerId', model: 'Customer' },
+          ])
 
-        await bot.sendMessage(
-          chatId,
-          `#No${getOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
-        )
-
-        if (getOrder?.bouquet?.bouquets?.length) {
-          for (const item of getOrder?.bouquet?.bouquets) {
-            await bot.sendPhoto(chatId, item?.bouquetId?.image, {
-              caption: `${item.name ? item.name + ' - ' : ''}${item.qty}x: ${getSum(item.price)}`,
-            })
-          }
-        }
-
-        if (getOrder?.flower?.flowers?.length) {
-          let data = []
-          let sum = 0
-          for (const item of getOrder?.flower?.flowers) {
-            data.push(item?.flowerId?.name + ' - ' + item.qty + 'x: ' + getSum(item.price) + '\n')
-            sum += +item.price
-          }
-
-          await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
-        }
-
-        if (getOrder && user.telegramId) {
-          let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${getOrder._id}'>zakazni ko'rish</a>`
-          await axios.post(
-            `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}&parse_mode=html`
+          await bot.sendMessage(
+            chatId,
+            `#No${getOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
           )
+
+          if (getOrder?.bouquet?.bouquets?.length) {
+            for (const item of getOrder?.bouquet?.bouquets) {
+              await bot.sendPhoto(chatId, item?.bouquetId?.image, {
+                caption: `${item.name ? item.name + ' - ' : ''}${item.qty}x: ${getSum(item.price)}`,
+              })
+            }
+          }
+
+          if (getOrder?.flower?.flowers?.length) {
+            let data = []
+            let sum = 0
+            for (const item of getOrder?.flower?.flowers) {
+              data.push(item?.flowerId?.name + ' - ' + item.qty + 'x: ' + getSum(item.price) + '\n')
+              sum += +item.price
+            }
+
+            await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
+          }
+
+          if (getOrder && user.telegramId) {
+            let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${getOrder._id}'>zakazni ko'rish</a>`
+            await axios.post(
+              `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}&parse_mode=html`
+            )
+          }
         }
       } catch (error) {
         console.log(error)

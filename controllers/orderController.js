@@ -1,6 +1,7 @@
 import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
 import orderModel from '../models/orderModel.js'
+import { bots } from '../telegramBot.js'
 
 const order = {
   /**
@@ -55,8 +56,18 @@ const order = {
 
     try {
       const userId = req.user._id
-      await orderModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: "Zakaz qo'shildi" })
+
+      const addedOrder = async () => {
+        const orderNumber = Math.floor(100000 + Math.random() * 900000)
+        const existOrder = await orderModel.findOne({ userId, orderNumber: orderNumber() })
+
+        if (existOrder) addedOrder()
+        else {
+          await orderModel.create({ ...req.body, userId })
+          res.status(201).json({ success: true, message: "Zakaz qo'shildi" })
+        }
+      }
+      addedOrder()
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -96,9 +107,41 @@ const order = {
 
     try {
       const orderId = req.params.id
-      await orderModel.findByIdAndUpdate(orderId, req.body)
+      const telegramToken = req.user.telegramToken
+      const location = req.user.location
+      const updatedOrder = await orderModel
+        .findByIdAndUpdate(orderId, req.body)
+        .populate('customerId')
+
+      // check telegram token
+      if (telegramToken) {
+        let text = `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz tayyor bo'ldi.\n`
+        // check delivery and location
+        if (updatedOrder.delivery === 'takeaway' && location) {
+          let long_lat = location.split(', ')
+          if (long_lat.length === 2) {
+            await bots[telegramToken].sendMessage(
+              updatedOrder.customerId.chatId,
+              `${text}Zakazingizni pastdagi lokatsiyadan olib ketishingiz mumkin.`
+            )
+            await bots[telegramToken].sendLocation(
+              updatedOrder.customerId.chatId,
+              long_lat[0],
+              long_lat[1]
+            )
+          } else {
+            await bots[telegramToken].sendMessage(
+              updatedOrder.customerId.chatId,
+              `${text}Zakazingizni <a href='${location}'>shu yerdan</a> olib ketishingiz mumkin.`,
+              { parse_mode: 'HTML' }
+            )
+          }
+        } else {
+        }
+      }
       res.status(200).json({ success: true, message: "Zakaz o'zgartirildi" })
     } catch (error) {
+      console.log(error)
       res.status(400).json({ success: false, message: error.message })
     }
   }),

@@ -2,11 +2,7 @@ import { model, Schema } from 'mongoose'
 
 const orderSchema = new Schema(
   {
-    orderNumber: {
-      type: Number,
-      require: true,
-      default: Math.floor(100000 + Math.random() * 900000),
-    },
+    orderNumber: { type: Number, require: true },
     bouquet: {
       bouquets: [
         {
