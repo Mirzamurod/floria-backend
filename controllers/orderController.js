@@ -56,18 +56,16 @@ const order = {
 
     try {
       const userId = req.user._id
+      let orderNumber
+      let existOrder
 
-      const addedOrder = async () => {
-        const orderNumber = Math.floor(100000 + Math.random() * 900000)
-        const existOrder = await orderModel.findOne({ userId, orderNumber: orderNumber() })
+      do {
+        orderNumber = Math.floor(100000 + Math.random() * 900000)
+        existOrder = await orderModel.findOne({ userId, orderNumber })
+      } while (existOrder)
 
-        if (existOrder) addedOrder()
-        else {
-          await orderModel.create({ ...req.body, userId })
-          res.status(201).json({ success: true, message: "Zakaz qo'shildi" })
-        }
-      }
-      addedOrder()
+      await orderModel.create({ ...req.body, userId, orderNumber })
+      res.status(201).json({ success: true, message: "Zakaz qo'shildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
