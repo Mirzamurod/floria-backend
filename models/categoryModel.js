@@ -1,9 +1,7 @@
 import { model, Schema } from 'mongoose'
 
-const flowerSchema = new Schema(
+const categorySchema = new Schema(
   {
-    image: { type: String, require: true },
-    price: { type: String, require: true },
     name: { type: String, require: true },
     block: { type: Boolean, default: false },
     userId: { type: Schema.Types.ObjectId, ref: 'User', require: true },
@@ -11,4 +9,4 @@ const flowerSchema = new Schema(
   { timestamps: true }
 )
 
-export default model('Flower', flowerSchema)
+export default model('Category', categorySchema)

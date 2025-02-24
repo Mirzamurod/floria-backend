@@ -35,6 +35,7 @@ const bouquet = {
       res.status(400).json({ message: error.message, success: false })
     }
   }),
+
   /**
    * @desc    Get Bouquets
    * @route   GET /api/bouquets/public/:userId
@@ -97,7 +98,7 @@ const bouquet = {
       if (bouquet) res.status(200).json({ data: bouquet })
       else res.status(400).json({ success: false, message: 'Buket topilmadi' })
     } catch (error) {
-      res.status(200).json({ success: false, message: error.message })
+      res.status(400).json({ success: false, message: error.message })
     }
   }),
 

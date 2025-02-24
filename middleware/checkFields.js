@@ -14,3 +14,7 @@ export const flowerAddField = [
 export const orderAddField = [
   check('phone').notEmpty().withMessage('Telefon raqam majburiy').bail().trim(),
 ]
+
+export const categoryAddField = [
+  check('name').notEmpty().withMessage('Nomi majburiy').bail().trim(),
+]

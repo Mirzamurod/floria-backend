@@ -1,14 +1,14 @@
 import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
-import flowerModel from '../models/flowerModel.js'
+import categoryModel from '../models/categoryModel.js'
 
-const flower = {
+const category = {
   /**
-   * @desc    Get Flowers
-   * @route   GET /api/flowers
+   * @desc    Get Categories
+   * @route   GET /api/category
    * @access  Private
    */
-  getFlowers: expressAsyncHandler(async (req, res) => {
+  getCategories: expressAsyncHandler(async (req, res) => {
     const { limit = 20, page = 1, sortName, sortValue, search } = req.query
 
     const filter = { userId: req.user._id }
@@ -16,9 +16,9 @@ const flower = {
     if (search) filter.name = { $regex: search ?? '', $options: 'i' }
 
     try {
-      const totalCount = await flowerModel.countDocuments(filter)
+      const totalCount = await categoryModel.countDocuments(filter)
 
-      const flowers = await flowerModel
+      const categories = await categoryModel
         .find(filter)
         .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), updatedAt: -1 })
         .limit(+limit)
@@ -26,7 +26,7 @@ const flower = {
 
       res.status(200).json({
         page,
-        data: flowers,
+        data: categories,
         pageLists: Math.ceil(totalCount / limit) || 1,
         count: totalCount,
       })
@@ -36,27 +36,27 @@ const flower = {
   }),
 
   /**
-   * @desc    Get Flowers
-   * @route   GET /api/flowers/public/:id
+   * @desc    Get Category
+   * @route   GET /api/category/public/:userId
    * @access  Public
    */
-  getPublicFlowers: expressAsyncHandler(async (req, res) => {
+  getPublicCategories: expressAsyncHandler(async (req, res) => {
     const { limit = 20, page = 1 } = req.query
     const { userId } = req.params
 
     const filter = { userId, block: false }
 
     try {
-      const totalCount = await flowerModel.countDocuments(filter)
+      const totalCount = await categoryModel.countDocuments(filter)
 
-      const flowers = await flowerModel
+      const categories = await categoryModel
         .find(filter)
         .limit(+limit)
         .skip(+limit * (+page - 1))
 
       res.status(200).json({
         page,
-        data: flowers,
+        data: categories,
         pageLists: Math.ceil(totalCount / limit) || 1,
         count: totalCount,
       })
@@ -66,11 +66,11 @@ const flower = {
   }),
 
   /**
-   * @desc    Add Flower
-   * @route   POST /api/flowers
+   * @desc    Add Category
+   * @route   POST /api/category
    * @access  Private
    */
-  addFlower: expressAsyncHandler(async (req, res) => {
+  addCategory: expressAsyncHandler(async (req, res) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({ messages: errors.array(), success: false })
@@ -78,78 +78,78 @@ const flower = {
 
     try {
       const userId = req.user._id
-      await flowerModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: "Gul qo'shildi" })
+      await categoryModel.create({ ...req.body, userId })
+      res.status(201).json({ success: true, message: "Kategoriya qo'shildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
   }),
 
   /**
-   * @desc    Get Flower
-   * @route   GET /api/flowers/:id
+   * @desc    Get Category
+   * @route   GET /api/category/:id
    * @access  Private
    */
-  getFlower: expressAsyncHandler(async (req, res) => {
+  getCategory: expressAsyncHandler(async (req, res) => {
     try {
-      const flowerId = req.params.id
-      const flower = await flowerModel.findOne({ userId: req.user._id, _id: flowerId })
-      if (flower) res.status(200).json({ data: flower })
-      else res.status(400).json({ success: false, message: 'Gul topilmadi' })
+      const categoryId = req.params.id
+      const category = await categoryModel.findById(categoryId)
+      if (category) res.status(200).json({ data: category })
+      else res.status(400).json({ success: false, message: 'Kategoriya topilmadi' })
     } catch (error) {
-      res.status(200).json({ success: false, message: error.message })
+      res.status(400).json({ success: false, message: error.message })
     }
   }),
 
   /**
-   * @desc    Edit Flower
-   * @route   PATCH /api/flowers/:id
+   * @desc    Edit Category
+   * @route   PATCH /api/category/:id
    * @access  Private
    */
-  editFlower: expressAsyncHandler(async (req, res) => {
+  editCategory: expressAsyncHandler(async (req, res) => {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
       return res.status(400).json({ messages: errors.array(), success: false })
     }
 
     try {
-      const flowerId = req.params.id
-      await flowerModel.findByIdAndUpdate(flowerId, req.body)
-      res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
+      const categoryId = req.params.id
+      await categoryModel.findByIdAndUpdate(categoryId, req.body)
+      res.status(200).json({ success: true, message: "Kategoriya o'zgartirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
   }),
 
   /**
-   * @desc    Edit Flower
-   * @route   PATCH /api/flowers/block/:id
+   * @desc    Edit Category
+   * @route   PATCH /api/category/block/:id
    * @access  Private
    */
-  editFlowerBlock: expressAsyncHandler(async (req, res) => {
+  editCategoryBlock: expressAsyncHandler(async (req, res) => {
     try {
-      const flowerId = req.params.id
-      await flowerModel.findByIdAndUpdate(flowerId, req.body)
-      res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
+      const categoryId = req.params.id
+      await categoryModel.findByIdAndUpdate(categoryId, req.body)
+      res.status(200).json({ success: true, message: "Kategoriya o'zgartirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
   }),
 
   /**
-   * @desc    Delete Flower
-   * @route   DELETE /api/flowers/:id
+   * @desc    Delete Category
+   * @route   DELETE /api/category/:id
    * @access  Private
    */
-  deleteFlower: expressAsyncHandler(async (req, res) => {
+  deleteCategory: expressAsyncHandler(async (req, res) => {
     try {
-      const flowerId = req.params.id
-      await flowerModel.findByIdAndDelete(flowerId)
-      res.status(200).json({ success: true, message: "Gul o'zgatirildi" })
+      const categoryId = req.params.id
+      await categoryModel.findByIdAndDelete(categoryId)
+      res.status(200).json({ success: true, message: "Kategoriya o'chirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
   }),
 }
 
-export default flower
+export default category

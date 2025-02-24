@@ -4,7 +4,13 @@ import colors from 'colors'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import connectDB from './config/db.js'
-import { bouquetRoutes, orderRoutes, flowerRoutes, userRoutes } from './routes/index.js'
+import {
+  bouquetRoutes,
+  orderRoutes,
+  flowerRoutes,
+  userRoutes,
+  categoryRoutes,
+} from './routes/index.js'
 import { restoreBots } from './telegramBot.js'
 
 const app = express()
@@ -25,6 +31,7 @@ app.use('/api', userRoutes)
 app.use('/api/orders', orderRoutes)
 app.use('/api/bouquets', bouquetRoutes)
 app.use('/api/flowers', flowerRoutes)
+app.use('/api/category', categoryRoutes)
 
 const port = process.env.PORT || 5000
 
