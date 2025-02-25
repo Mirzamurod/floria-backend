@@ -35,7 +35,7 @@ app.use('/api/category', categoryRoutes)
 
 const port = process.env.PORT || 5000
 
-app.listen(port, '0.0.0.0', async () => {
+app.listen(port, async () => {
   console.log(`Server ishga tushdi, Port ${port}`.yellow.bold)
   await restoreBots()
 
