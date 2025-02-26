@@ -3,6 +3,8 @@ import dotenv from 'dotenv'
 import colors from 'colors'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import https from 'https'
+import fs from 'fs'
 import connectDB from './config/db.js'
 import {
   bouquetRoutes,
@@ -16,6 +18,12 @@ import { restoreBots } from './telegramBot.js'
 const app = express()
 dotenv.config()
 connectDB()
+
+// SSL sertifikatlar
+const options = {
+  key: fs.readFileSync('/etc/letsencrypt/live/floria.uz/privkey.pem'),
+  cert: fs.readFileSync('/etc/letsencrypt/live/floria.uz/fullchain.pem'),
+}
 
 // app.use(
 //   cors({ origin: 'http://localhost:3000', methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] })
@@ -35,7 +43,15 @@ app.use('/api/category', categoryRoutes)
 
 const port = process.env.PORT || 5000
 
-app.listen(port, async () => {
+// app.listen(port, async () => {
+//   console.log(`Server ishga tushdi, Port ${port}`.yellow.bold)
+//   await restoreBots()
+
+//   // 📌 Har 10 soniyada tokenlarni qayta yuklash
+//   setInterval(restoreBots, 10000)
+// })
+
+https.createServer(options, app).listen(5000, async () => {
   console.log(`Server ishga tushdi, Port ${port}`.yellow.bold)
   await restoreBots()
 
