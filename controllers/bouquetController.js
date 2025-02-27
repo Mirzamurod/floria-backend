@@ -9,12 +9,13 @@ const bouquet = {
    * @access  Private
    */
   getBouquets: expressAsyncHandler(async (req, res) => {
-    const { limit = 20, page = 1, sortName, sortValue, search } = req.query
+    const { limit = 20, page = 1, sortName, sortValue, search, category } = req.query
 
     const filter = { userId: req.user._id }
 
     if (search)
       filter.$expr = { $regexMatch: { input: { $toString: '$orderNumber' }, regex: search } }
+    if (category) filter.category = category
 
     try {
       const totalCount = await bouquetModel.countDocuments(filter)
@@ -24,6 +25,7 @@ const bouquet = {
         .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), updatedAt: -1 })
         .limit(+limit)
         .skip(+limit * (+page - 1))
+        .populate([{ path: 'category', model: 'Category' }])
 
       res.status(200).json({
         page,
@@ -42,10 +44,12 @@ const bouquet = {
    * @access  Public
    */
   getPublicBouquets: expressAsyncHandler(async (req, res) => {
-    const { limit = 20, page = 1 } = req.query
+    const { limit = 20, page = 1, category } = req.query
     const { userId } = req.params
 
     const filter = { userId, block: false }
+
+    if (category) filter.category = category
 
     try {
       const totalCount = await bouquetModel.countDocuments(filter)
@@ -54,6 +58,7 @@ const bouquet = {
         .find(filter)
         .limit(+limit)
         .skip(+limit * (+page - 1))
+        .populate([{ path: 'category', model: 'Category' }])
 
       res.status(200).json({
         page,
