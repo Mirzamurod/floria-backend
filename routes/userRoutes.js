@@ -5,7 +5,8 @@ import user from './../controllers/userController.js'
 const router = express.Router()
 
 router.delete('/users', protect, user.delete)
-router.route('/client').get(protect, admin, user.getClientsByAdmin)
-router.patch('/client/telegram', protect, client, user.editTelegramKey)
+router.route('/clients').get(protect, admin, user.getClientsByAdmin)
+router.patch('/clients/:id', protect, admin, user.editClientByAdmin)
+router.patch('/clients/telegram', protect, client, user.editTelegramKey)
 
 export default router

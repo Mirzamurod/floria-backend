@@ -16,13 +16,15 @@ const user = {
 
   /**
    * @desc    Get Clients by Admin
-   * @route   GET /api/client
+   * @route   GET /api/clients
    * @access  Private
    */
   getClientsByAdmin: expressAsyncHandler(async (req, res) => {
-    const { limit = 20, page = 1, sortName, sortValue } = req.query
+    const { limit = 20, page = 1, sortName, sortValue, search } = req.query
 
-    const filter = { userId: req.user._id, role: 'client' }
+    const filter = { role: 'client' }
+
+    if (search) filter.email = { $regex: search ?? '', $options: 'i' }
 
     try {
       const totalCount = await userModel.countDocuments(filter)
@@ -45,8 +47,25 @@ const user = {
   }),
 
   /**
+   * @desc    Edit Client by Admin
+   * @route   PATCH /api/clients/:id
+   * @access  Private
+   */
+  editClientByAdmin: expressAsyncHandler(async (req, res) => {
+    const clientId = req.params.id
+    const { block } = req.body
+
+    try {
+      await userModel.findByIdAndUpdate(clientId, { block })
+      res.status(200).json({ success: true, message: 'User updated' })
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+  }),
+
+  /**
    * @desc    Edit Client Telegram key
-   * @route   PATCH /api/client/telegram
+   * @route   PATCH /api/clients/telegram
    * @access  Private
    */
   editTelegramKey: expressAsyncHandler(async (req, res) => {
