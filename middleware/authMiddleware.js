@@ -24,17 +24,27 @@ const protect = expressAsyncHandler(async (req, res, next) => {
 })
 
 const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin' && !req.user.block) next()
-  else if (req.user.block)
-    res.status(400).json({ message: false, message: 'Your account is inactive' })
-  else res.status(401).json({ success: false, message: 'not_authorized_as_an_admin' })
+  if (req.user) {
+    if (req.user.role !== 'admin')
+      res.status(400).json({ success: false, message: "Siz admin huquqi yo'q" })
+    else {
+      if (req.user.block)
+        res.status(400).json({ success: false, message: 'Your account is inactive' })
+      else next()
+    }
+  } else res.status(401).json({ success: false, message: 'not_authorized_as_an_admin' })
 }
 
 const client = (req, res, next) => {
-  if (req.user && req.user.role === 'client' && !req.user.block) next()
-  else if (req.user.block)
-    res.status(400).json({ message: false, message: 'Your account is inactive' })
-  else res.status(401).json({ success: false, message: 'not_authorized_as_a_client' })
+  if (req.user) {
+    if (req.user.role !== 'client')
+      res.status(400).json({ success: false, message: "Sizda mijoz huquqi yo'q" })
+    else {
+      if (req.user.block)
+        res.status(400).json({ success: false, message: 'Your account is inactive' })
+      else next()
+    }
+  } else res.status(401).json({ success: false, message: 'not_authorized_as_a_client' })
 }
 
 export { protect, admin, client }
