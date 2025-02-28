@@ -48,7 +48,7 @@ const user = {
 
   /**
    * @desc    Edit Client by Admin
-   * @route   PATCH /api/clients/:id
+   * @route   PATCH /api/clients/edit/:id
    * @access  Private
    */
   editClientByAdmin: expressAsyncHandler(async (req, res) => {

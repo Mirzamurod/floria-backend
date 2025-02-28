@@ -174,7 +174,7 @@ const createBot = async (telegramToken, user) => {
 export const restoreBots = async () => {
   const tokens = await User.find({ role: 'client', telegramToken: { $exists: true }, block: false })
   tokens.forEach(({ telegramToken, telegramId, _id }) => {
-    if (!bots[telegramToken]) createBot(telegramToken, { telegramId, _id })
+    if (!bots[telegramToken] && telegramToken) createBot(telegramToken, { telegramId, _id })
   })
 
   Object.keys(bots).forEach(telegramToken => {
