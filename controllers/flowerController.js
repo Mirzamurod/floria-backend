@@ -1,5 +1,8 @@
 import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
+import path from 'path'
+import sharp from 'sharp'
+import fs from 'fs/promises'
 import flowerModel from '../models/flowerModel.js'
 
 const flower = {
@@ -71,26 +74,6 @@ const flower = {
   }),
 
   /**
-   * @desc    Add Flower
-   * @route   POST /api/flowers
-   * @access  Private
-   */
-  addFlower: expressAsyncHandler(async (req, res) => {
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ messages: errors.array(), success: false })
-    }
-
-    try {
-      const userId = req.user._id
-      await flowerModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: "Gul qo'shildi" })
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message })
-    }
-  }),
-
-  /**
    * @desc    Get Flower
    * @route   GET /api/flowers/:id
    * @access  Private
@@ -107,6 +90,46 @@ const flower = {
   }),
 
   /**
+   * @desc    Add Flower
+   * @route   POST /api/flowers
+   * @access  Private
+   */
+  addFlower: expressAsyncHandler(async (req, res) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ messages: errors.array(), success: false })
+    }
+
+    try {
+      if (req.file) {
+        const check1 = req.file.originalname.includes('.jpg')
+        const check2 = req.file.originalname.includes('.jpeg')
+        const check3 = req.file.originalname.includes('.png')
+
+        if (check1 || check2 || check3) {
+          const imageName = Date.now() + path.extname(req.file.originalname)
+          const image600 = await sharp(req.file.buffer)
+            .resize({ width: 540, height: 600 })
+            .toFormat('png')
+            .toFile('./images/' + 600 + imageName)
+
+          if (image600) {
+            const userId = req.user._id
+            await flowerModel.create({
+              ...req.body,
+              userId,
+              image: `${process.env.IMAGE_URL}600${imageName}`,
+            })
+            res.status(201).json({ success: true, message: "Gul qo'shildi" })
+          }
+        }
+      }
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+  }),
+
+  /**
    * @desc    Edit Flower
    * @route   PATCH /api/flowers/:id
    * @access  Private
@@ -119,8 +142,37 @@ const flower = {
 
     try {
       const flowerId = req.params.id
-      await flowerModel.findByIdAndUpdate(flowerId, req.body)
-      res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
+      const existsFlower = await flowerModel.findById(flowerId)
+
+      if (req.file) {
+        const check1 = req.file.originalname.includes('.jpg')
+        const check2 = req.file.originalname.includes('.jpeg')
+        const check3 = req.file.originalname.includes('.png')
+
+        if (check1 || check2 || check3) {
+          const imageName = Date.now() + path.extname(req.file.originalname)
+          const image600 = await sharp(req.file.buffer)
+            .resize({ width: 540, height: 600 })
+            .toFormat('png')
+            .toFile('./images/' + 600 + imageName)
+
+          if (image600) {
+            await flowerModel.findByIdAndUpdate(flowerId, {
+              ...req.body,
+              image: `${process.env.IMAGE_URL}600${imageName}`,
+            })
+
+            const imageUrl = './images/'
+            const image = existsFlower?.image?.split('/')
+            fs.unlink(imageUrl + image[image.length - 1])
+
+            res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+          }
+        }
+      } else {
+        await flowerModel.findByIdAndUpdate(flowerId, req.body)
+        res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+      }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }

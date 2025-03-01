@@ -1,5 +1,8 @@
 import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
+import path from 'path'
+import sharp from 'sharp'
+import fs from 'fs/promises'
 import bouquetModel from './../models/bouquetModel.js'
 
 const bouquet = {
@@ -72,6 +75,22 @@ const bouquet = {
   }),
 
   /**
+   * @desc    Get Bouquet
+   * @route   GET /api/bouquets/:id
+   * @access  Private
+   */
+  getBouquet: expressAsyncHandler(async (req, res) => {
+    try {
+      const bouquetId = req.params.id
+      const bouquet = await bouquetModel.findOne({ userId: req.user._id, _id: bouquetId })
+      if (bouquet) res.status(200).json({ data: bouquet })
+      else res.status(400).json({ success: false, message: 'Buket topilmadi' })
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+  }),
+
+  /**
    * @desc    Add Bouquet
    * @route   POST /api/bouquets
    * @access  Private
@@ -83,25 +102,29 @@ const bouquet = {
     }
 
     try {
-      const userId = req.user._id
-      await bouquetModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: "Buket qo'shildi" })
-    } catch (error) {
-      res.status(400).json({ success: false, message: error.message })
-    }
-  }),
+      if (req.file) {
+        const check1 = req.file.originalname.includes('.jpg')
+        const check2 = req.file.originalname.includes('.jpeg')
+        const check3 = req.file.originalname.includes('.png')
 
-  /**
-   * @desc    Get Bouquet
-   * @route   GET /api/bouquets/:id
-   * @access  Private
-   */
-  getBouquet: expressAsyncHandler(async (req, res) => {
-    try {
-      const bouquetId = req.params.id
-      const bouquet = await bouquetModel.findOne({ userId: req.user._id, _id: bouquetId })
-      if (bouquet) res.status(200).json({ data: bouquet })
-      else res.status(400).json({ success: false, message: 'Buket topilmadi' })
+        if (check1 || check2 || check3) {
+          const imageName = Date.now() + path.extname(req.file.originalname)
+          const image600 = await sharp(req.file.buffer)
+            .resize({ width: 540, height: 600 })
+            .toFormat('png')
+            .toFile('./images/' + 600 + imageName)
+
+          if (image600) {
+            const userId = req.user._id
+            await bouquetModel.create({
+              ...req.body,
+              userId,
+              image: `${process.env.IMAGE_URL}600${imageName}`,
+            })
+            res.status(201).json({ success: true, message: "Buket qo'shildi" })
+          }
+        }
+      }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -120,8 +143,37 @@ const bouquet = {
 
     try {
       const bouquetId = req.params.id
-      await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
-      res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+      const existsBouquet = await bouquetModel.findById(bouquetId)
+
+      if (req.file) {
+        const check1 = req.file.originalname.includes('.jpg')
+        const check2 = req.file.originalname.includes('.jpeg')
+        const check3 = req.file.originalname.includes('.png')
+
+        if (check1 || check2 || check3) {
+          const imageName = Date.now() + path.extname(req.file.originalname)
+          const image600 = await sharp(req.file.buffer)
+            .resize({ width: 540, height: 600 })
+            .toFormat('png')
+            .toFile('./images/' + 600 + imageName)
+
+          if (image600) {
+            await bouquetModel.findByIdAndUpdate(bouquetId, {
+              ...req.body,
+              image: `${process.env.IMAGE_URL}600${imageName}`,
+            })
+
+            const imageUrl = './images/'
+            const image = existsBouquet?.image?.split('/')
+            fs.unlink(imageUrl + image[image.length - 1])
+
+            res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+          }
+        }
+      } else {
+        await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
+        res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+      }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
