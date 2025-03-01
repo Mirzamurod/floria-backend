@@ -118,7 +118,7 @@ const flower = {
             await flowerModel.create({
               ...req.body,
               userId,
-              image: `${process.env.IMAGE_URL}600${imageName}`,
+              image: `${process.env.IMAGE_URL}images/600${imageName}`,
             })
             res.status(201).json({ success: true, message: "Gul qo'shildi" })
           }
@@ -159,19 +159,19 @@ const flower = {
           if (image600) {
             await flowerModel.findByIdAndUpdate(flowerId, {
               ...req.body,
-              image: `${process.env.IMAGE_URL}600${imageName}`,
+              image: `${process.env.IMAGE_URL}images/600${imageName}`,
             })
 
             const imageUrl = './images/'
             const image = existsFlower?.image?.split('/')
             fs.unlink(imageUrl + image[image.length - 1])
 
-            res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+            res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
           }
         }
       } else {
         await flowerModel.findByIdAndUpdate(flowerId, req.body)
-        res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+        res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
       }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })

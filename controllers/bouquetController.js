@@ -119,7 +119,7 @@ const bouquet = {
             await bouquetModel.create({
               ...req.body,
               userId,
-              image: `${process.env.IMAGE_URL}600${imageName}`,
+              image: `${process.env.IMAGE_URL}images/600${imageName}`,
             })
             res.status(201).json({ success: true, message: "Buket qo'shildi" })
           }
@@ -160,7 +160,7 @@ const bouquet = {
           if (image600) {
             await bouquetModel.findByIdAndUpdate(bouquetId, {
               ...req.body,
-              image: `${process.env.IMAGE_URL}600${imageName}`,
+              image: `${process.env.IMAGE_URL}images/600${imageName}`,
             })
 
             const imageUrl = './images/'
