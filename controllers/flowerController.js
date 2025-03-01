@@ -118,7 +118,7 @@ const flower = {
             await flowerModel.create({
               ...req.body,
               userId,
-              image: `${process.env.IMAGE_URL}images/600${imageName}`,
+              image: `${process.env.IMAGE_URL}600${imageName}`,
             })
             res.status(201).json({ success: true, message: "Gul qo'shildi" })
           }
@@ -159,7 +159,7 @@ const flower = {
           if (image600) {
             await flowerModel.findByIdAndUpdate(flowerId, {
               ...req.body,
-              image: `${process.env.IMAGE_URL}images/600${imageName}`,
+              image: `${process.env.IMAGE_URL}600${imageName}`,
             })
 
             const imageUrl = './images/'
