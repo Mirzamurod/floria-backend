@@ -40,6 +40,18 @@ app.use('/api/bouquets', bouquetRoutes)
 app.use('/api/flowers', flowerRoutes)
 app.use('/api/category', categoryRoutes)
 
+// 📌 Statik rasmni beruvchi API
+app.get('/images/:filename', (req, res) => {
+  const { filename } = req.params
+  const imagePath = path.join(__dirname, 'images', filename)
+
+  res.sendFile(imagePath, err => {
+    if (err) {
+      res.status(404).json({ error: 'Rasm topilmadi' })
+    }
+  })
+})
+
 const port = process.env.PORT || 5000
 
 app.listen(port, async () => {
