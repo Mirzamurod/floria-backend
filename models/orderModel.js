@@ -27,6 +27,7 @@ const orderSchema = new Schema(
     },
     delivery: { type: String, enum: ['delivery', 'takeaway'], default: 'takeaway' },
     status: { type: String, enum: ['new', 'old'], default: 'new' },
+    location: { longitude: { type: Number }, latitude: { type: Number } },
     userId: { type: Schema.Types.ObjectId, ref: 'User', require: true },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', require: true },
   },

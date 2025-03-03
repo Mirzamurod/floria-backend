@@ -113,14 +113,17 @@ const order = {
 
       // check telegram token
       if (telegramToken) {
-        let text = `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz tayyor bo'ldi.\n`
+        await bots[telegramToken].sendMessage(
+          updatedOrder.customerId.chatId,
+          `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz tayyor bo'ldi.\n`
+        )
         // check delivery and location
-        if (updatedOrder.delivery === 'takeaway' && location) {
+        if (updatedOrder.delivery === 'takeaway') {
           let long_lat = location.split(', ')
           if (long_lat.length === 2) {
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              `${text}Zakazingizni pastdagi lokatsiyadan olib ketishingiz mumkin.`
+              location ? 'Zakazingizni pastdagi lokatsiyadan olib ketishingiz mumkin.' : ''
             )
             await bots[telegramToken].sendLocation(
               updatedOrder.customerId.chatId,
@@ -130,7 +133,9 @@ const order = {
           } else {
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              `${text}Zakazingizni <a href='${location}'>shu yerdan</a> olib ketishingiz mumkin.`,
+              location
+                ? `Zakazingizni <a href='${location}'>shu yerdan</a> olib ketishingiz mumkin.`
+                : '',
               { parse_mode: 'HTML' }
             )
           }

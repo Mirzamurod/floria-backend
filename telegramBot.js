@@ -20,33 +20,60 @@ const createBot = async (telegramToken, user) => {
 
   bot.setMyCommands([{ command: '/start', description: "Buketlar haqida ma'lumot" }])
 
+  const web_app = {
+    reply_markup: {
+      keyboard: [
+        [{ text: "Buketlarni ko'rish", web_app: { url: `${process.env.FRONT_URL}${user._id}` } }],
+      ],
+      resize_keyboard: true,
+    },
+  }
+
+  const locationKeyboard = {
+    reply_markup: {
+      keyboard: [[{ text: '📍 Joylashuvni yuborish', request_location: true }]],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    },
+  }
+
   bot.on('message', async msg => {
     const chatId = msg.chat.id
     const text = msg.text
     const botName = await bot.getMe()
     const customer = await Customer.findOne({ chatId })
     const photoArray = msg.photo
+    const getLocation = msg.location
 
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
+
+      const existOrder = await Order.find({
+        customerId: customer._id,
+        delivery: 'delivery',
+        location: { $exists: false },
+      })
+
+      if (existOrder.length > 1) {
+        const keyboard = {
+          reply_markup: {
+            inline_keyboard: [
+              ...existOrder.map(item => [
+                { text: `💐 No${item.orderNumber}`, callback_data: item._id.toString() },
+              ]),
+              [{ text: '💐 Hammasi', callback_data: 'order_all' }],
+            ],
+          },
+        }
+
+        bot.sendMessage(chatId, 'existOrder', keyboard)
+      }
 
       if (customer?.phone) {
         await bot.sendMessage(
           chatId,
           "Buketlarni ko'rish knopkasini bosib buket va gullarni ko'rishingiz mumkin",
-          {
-            reply_markup: {
-              keyboard: [
-                [
-                  {
-                    text: "Buketlarni ko'rish",
-                    web_app: { url: `${process.env.FRONT_URL}${user._id}` },
-                  },
-                ],
-              ],
-              resize_keyboard: true,
-            },
-          }
+          web_app
         )
       } else {
         await bot.sendMessage(
@@ -80,19 +107,7 @@ const createBot = async (telegramToken, user) => {
       await bot.sendMessage(
         msg.chat.id,
         `✅ Raqamingiz qabul qilindi: ${msg.contact.first_name}. Buketlarni ko'rish knopkasini bosib buket va gullarni ko'rishingiz mumkin`,
-        {
-          reply_markup: {
-            keyboard: [
-              [
-                {
-                  text: "Buketlarni ko'rish",
-                  web_app: { url: `${process.env.FRONT_URL}${user._id}` },
-                },
-              ],
-            ],
-            resize_keyboard: true,
-          },
-        }
+        web_app
       )
     }
 
@@ -108,7 +123,6 @@ const createBot = async (telegramToken, user) => {
             orderNumber = Math.floor(100000 + Math.random() * 900000)
             existOrder = await Order.findOne({ userId: data.userId, orderNumber })
           } while (existOrder)
-          console.log(orderNumber)
 
           const createdOrder = await Order.create({
             ...data,
@@ -148,6 +162,14 @@ const createBot = async (telegramToken, user) => {
             await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
           }
 
+          if (getOrder?.delivery === 'delivery' && !createdOrder?.location) {
+            await bot.sendMessage(
+              chatId,
+              'Buketlarni yetkazib berish uchun manzilingizni yuboring.',
+              locationKeyboard
+            )
+          }
+
           if (getOrder && user.telegramId) {
             let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${getOrder._id}'>zakazni ko'rish</a>`
             await axios.post(
@@ -159,6 +181,46 @@ const createBot = async (telegramToken, user) => {
         console.log(error)
       }
     }
+
+    if (getLocation.latitude && getLocation.longitude) {
+      const existOrder = await Order.findOne({
+        customerId: customer._id,
+        location: { $exists: false },
+      }).sort({ createdAt: -1 })
+
+      if (existOrder) {
+        await Order.findByIdAndUpdate(existOrder._id, { location: getLocation })
+
+        await bot.sendMessage(
+          "Manzilingiz qabul qilindi. Buket tayyor bo'lishi bilan manzilingizga yetkazib beramiz."
+        )
+      }
+    }
+  })
+
+  // Tugma bosilganda
+  bot.on('callback_query', query => {
+    const chatId = query.message.chat.id
+    const selectedOrder = query.data
+
+    bot.sendMessage(
+      chatId,
+      `Siz tanladingiz: ${selectedOrder}\nEndi joylashuvingizni yuboring!`,
+      locationKeyboard
+    )
+
+    // Tanlangan buyurtmani saqlab qo'yamiz (foydalanuvchidan keyin keladigan location bilan bog'lash uchun)
+    bot.once('message', msg => {
+      if (msg.location) {
+        const { latitude, longitude } = msg.location
+
+        bot.sendMessage(
+          chatId,
+          `✅ Buyurtma: ${selectedOrder}\n📍 Location:\n🌍 Latitude: ${latitude}\n📍 Longitude: ${longitude}`,
+          web_app
+        )
+      }
+    })
   })
 
   bots[telegramToken] = bot
