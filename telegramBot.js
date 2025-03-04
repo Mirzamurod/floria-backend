@@ -195,6 +195,8 @@ const createBot = async (telegramToken, user) => {
         location: { $exists: false },
       }).sort({ createdAt: -1 })
 
+      console.log(existOrder)
+
       if (existOrder) {
         await Order.findByIdAndUpdate(existOrder._id, { location: getLocation })
 
