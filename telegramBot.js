@@ -137,6 +137,7 @@ const createBot = async (telegramToken, user) => {
             orderNumber = Math.floor(100000 + Math.random() * 900000)
             existOrder = await Order.findOne({ userId: data.userId, orderNumber })
           } while (existOrder)
+          console.log(data)
 
           const createdOrder = await Order.create({
             ...data,

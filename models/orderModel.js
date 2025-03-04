@@ -26,7 +26,7 @@ const orderSchema = new Schema(
       price: { type: Number, require: true },
     },
     date: { type: Date, require: true },
-    prepayment: { type: Boolean, default: false },
+    prepayment: { type: Boolean },
     prepaymentImage: { type: String, default: false },
     delivery: { type: String, enum: ['delivery', 'takeaway'], default: 'takeaway' },
     status: { type: String, enum: ['new', 'old'], default: 'new' },
