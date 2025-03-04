@@ -44,31 +44,11 @@ const createBot = async (telegramToken, user) => {
     const customer = await Customer.findOne({ chatId })
     const photoArray = msg.photo
     const getLocation = msg.location
-    console.log(getLocation)
+    console.log('getLocation', getLocation)
+    console.log('customer', customer)
 
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
-
-      const existOrder = await Order.find({
-        customerId: customer._id,
-        delivery: 'delivery',
-        location: { $exists: false },
-      })
-
-      if (existOrder.length > 1) {
-        const keyboard = {
-          reply_markup: {
-            inline_keyboard: [
-              ...existOrder.map(item => [
-                { text: `💐 No${item.orderNumber}`, callback_data: item._id.toString() },
-              ]),
-              [{ text: '💐 Hammasi', callback_data: 'order_all' }],
-            ],
-          },
-        }
-
-        bot.sendMessage(chatId, 'existOrder', keyboard)
-      }
 
       if (customer?.phone) {
         await bot.sendMessage(
@@ -163,7 +143,7 @@ const createBot = async (telegramToken, user) => {
             await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
           }
 
-          if (getOrder?.delivery === 'delivery' && !createdOrder?.location) {
+          if (getOrder?.delivery === 'delivery') {
             await bot.sendMessage(
               chatId,
               'Buketlarni yetkazib berish uchun manzilingizni yuboring.',
