@@ -205,7 +205,7 @@ const createBot = async (telegramToken, user) => {
           chatId,
           `Manzilingiz qabul qilindi.${
             existOrder.prepayment
-              ? `\n\nShu karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\`${card_number}\`\n${card_name}`
+              ? `\n\nPastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\`${card_number}\`\n${card_name}`
               : "Buket tayyor bo'lishi bilan manzilingizga yetkazib beramiz."
           }`,
           { ...imageKeyboard, parse_mode: 'Markdown' }
