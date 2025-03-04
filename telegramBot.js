@@ -44,6 +44,7 @@ const createBot = async (telegramToken, user) => {
     const customer = await Customer.findOne({ chatId })
     const photoArray = msg.photo
     const getLocation = msg.location
+    console.log(getLocation)
 
     if (text === '/start') {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
@@ -182,7 +183,7 @@ const createBot = async (telegramToken, user) => {
       }
     }
 
-    if (getLocation.latitude && getLocation.longitude) {
+    if (getLocation?.latitude && getLocation?.longitude) {
       const existOrder = await Order.findOne({
         customerId: customer._id,
         location: { $exists: false },
