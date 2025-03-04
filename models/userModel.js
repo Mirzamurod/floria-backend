@@ -10,6 +10,8 @@ const userSchema = new Schema(
     telegramToken: { type: String },
     telegramId: { type: String },
     location: { type: String },
+    card_number: { type: String },
+    card_name: { type: String },
   },
   { timestamps: true }
 )
