@@ -31,7 +31,7 @@ const createBot = async (telegramToken, user) => {
 
   const locationKeyboard = {
     reply_markup: {
-      keyboard: [[{ text: '📍 Joylashuvni yuborish', request_location: true }]],
+      keyboard: [[{ text: '📍 Manzilingizni yuborish', request_location: true }]],
       resize_keyboard: true,
       one_time_keyboard: true,
     },
@@ -173,7 +173,9 @@ const createBot = async (telegramToken, user) => {
         await Order.findByIdAndUpdate(existOrder._id, { location: getLocation })
 
         await bot.sendMessage(
-          "Manzilingiz qabul qilindi. Buket tayyor bo'lishi bilan manzilingizga yetkazib beramiz."
+          chatId,
+          "Manzilingiz qabul qilindi. Buket tayyor bo'lishi bilan manzilingizga yetkazib beramiz.",
+          web_app
         )
       }
     }
@@ -186,7 +188,7 @@ const createBot = async (telegramToken, user) => {
 
     bot.sendMessage(
       chatId,
-      `Siz tanladingiz: ${selectedOrder}\nEndi joylashuvingizni yuboring!`,
+      `Siz tanladingiz: ${selectedOrder}\nEndi manzilingizni yuboring!`,
       locationKeyboard
     )
 
