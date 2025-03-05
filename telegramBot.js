@@ -82,7 +82,7 @@ const createBot = async (telegramToken, user) => {
     if (msg.photo) {
       const existOrder = await Order.findOne({
         customerId: customer._id,
-        location: { $exists: true },
+        // location: { $exists: true },
         prepayment: true,
         prepaymentImage: { $exists: false },
       }).sort({ createdAt: -1 })
