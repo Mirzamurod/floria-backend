@@ -71,13 +71,37 @@ const user = {
   editTelegramKey: expressAsyncHandler(async (req, res) => {
     try {
       const userId = req.user._id
-      const { telegramToken, telegramId, location } = req.body
-      await userModel.findByIdAndUpdate(userId, { telegramToken, telegramId, location })
+      const { telegramToken, telegramId, location, card_number, card_name } = req.body
+      await userModel.findByIdAndUpdate(userId, {
+        telegramToken,
+        telegramId,
+        location,
+        card_number,
+        card_name,
+      })
 
       res.status(200).json({ success: true, message: "Foydalanuvchi o'zgartirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
+  }),
+
+  /**
+   * @desc    Get User
+   * @route   GET /api/users/public/:id
+   * @access  Public
+   */
+  getUser: expressAsyncHandler(async (req, res) => {
+    const userId = req.params.id
+
+    try {
+      const user = await userModel.findById(userId, { location: 1, card_number: 1 })
+
+      res.status(200).json({ data: user })
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+    const user = await userModel.findById()
   }),
 }
 
