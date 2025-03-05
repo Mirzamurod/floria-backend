@@ -183,6 +183,32 @@ const createBot = async (telegramToken, user) => {
               'Buketlarni yetkazib berish uchun manzilingizni yuboring.',
               locationKeyboard
             )
+          } else if (getOrder?.delivery === 'takeaway') {
+            if (getOrder.prepayment)
+              await bot.sendMessage(
+                chatId,
+                `Pastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\`${card_number}\`\n${card_name}`,
+                { ...imageKeyboard, parse_mode: 'Markdown' }
+              )
+            else {
+              await bot.sendMessage(
+                chatId,
+                "Zakazingiz qabul qilindi. Tayyor bo'lishi bilan sizga xabar beramiz"
+              )
+
+              await bot.sendMessage(
+                chatId,
+                "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+                web_app
+              )
+
+              if (getOrder && telegramId) {
+                let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${getOrder._id}'>zakazni ko'rish</a>`
+                await axios.post(
+                  `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
+                )
+              }
+            }
           }
         }
       } catch (error) {
@@ -196,27 +222,34 @@ const createBot = async (telegramToken, user) => {
         location: { $exists: false },
       }).sort({ createdAt: -1 })
 
-      console.log(existOrder)
-
       if (existOrder) {
         await Order.findByIdAndUpdate(existOrder._id, { location: getLocation })
 
-        await bot.sendMessage(
-          chatId,
-          `Manzilingiz qabul qilindi.${
-            existOrder.prepayment
-              ? `\n\nPastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\`${card_number}\`\n${card_name}`
-              : "Buket tayyor bo'lishi bilan manzilingizga yetkazib beramiz."
-          }`,
-          { ...imageKeyboard, parse_mode: 'Markdown' }
-        )
+        if (existOrder.prepayment) {
+          await bot.sendMessage(
+            chatId,
+            `Manzilingiz qabul qilindi.\n\nPastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\`${card_number}\`\n${card_name}`,
+            { ...imageKeyboard, parse_mode: 'Markdown' }
+          )
+        } else {
+          await bot.sendMessage(
+            chatId,
+            "Manzilingiz qabul qilindi. Buket tayyor bo'lishi bilan manzilingizga yetkazib beramiz."
+          )
 
-        if (!existOrder.prepayment)
           await bot.sendMessage(
             chatId,
             "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
             web_app
           )
+
+          if (existOrder && telegramId) {
+            let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${existOrder._id}'>zakazni ko'rish</a>`
+            await axios.post(
+              `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
+            )
+          }
+        }
       }
     }
   })
