@@ -115,7 +115,7 @@ const order = {
       if (telegramToken) {
         await bots[telegramToken].sendMessage(
           updatedOrder.customerId.chatId,
-          `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz tayyor bo'ldi.\n`
+          `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz tayyor bo'ldi.`
         )
         // check delivery and location
         if (updatedOrder.delivery === 'takeaway') {
@@ -139,7 +139,24 @@ const order = {
               { parse_mode: 'HTML' }
             )
           }
+
+          await bots[telegramToken].sendMessage(
+            updatedOrder.customerId.chatId,
+            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+            web_app
+          )
         } else {
+          await bots[telegramToken].sendMessage(
+            updatedOrder.customerId.chatId,
+            'Tez orada manzilingizga yetkazib beriladi',
+            web_app
+          )
+
+          await bots[telegramToken].sendMessage(
+            updatedOrder.customerId.chatId,
+            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+            web_app
+          )
         }
       }
       res.status(200).json({ success: true, message: "Zakaz o'zgartirildi" })

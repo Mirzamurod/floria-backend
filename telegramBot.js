@@ -86,7 +86,6 @@ const createBot = async (telegramToken, user) => {
         prepayment: true,
         prepaymentImage: { $exists: false },
       }).sort({ createdAt: -1 })
-      console.log(existOrder)
 
       if (photoArray[2].file_id && existOrder) {
         await Order.findByIdAndUpdate(existOrder._id, {
@@ -137,7 +136,6 @@ const createBot = async (telegramToken, user) => {
             orderNumber = Math.floor(100000 + Math.random() * 900000)
             existOrder = await Order.findOne({ userId: data.userId, orderNumber })
           } while (existOrder)
-          console.log(data)
 
           const createdOrder = await Order.create({
             ...data,
@@ -177,6 +175,16 @@ const createBot = async (telegramToken, user) => {
             await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
           }
 
+          await bot.sendMessage(
+            chatId,
+            `**Buketlar umumiy soni**:  ${
+              getOrder?.bouquet?.qty + getOrder?.flower?.qty
+            } ta\n**Buketlar umumiy narxi**: ${getSum(
+              getOrder?.bouquet.price + getOrder?.flower?.price
+            )}`,
+            { parse_mode: 'Markdown' }
+          )
+
           if (getOrder?.delivery === 'delivery') {
             await bot.sendMessage(
               chatId,
@@ -187,7 +195,7 @@ const createBot = async (telegramToken, user) => {
             if (getOrder.prepayment)
               await bot.sendMessage(
                 chatId,
-                `Pastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\`${card_number}\`\n${card_name}`,
+                `Pastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\n\`${card_number}\`\n${card_name}`,
                 { ...imageKeyboard, parse_mode: 'Markdown' }
               )
             else {
@@ -228,7 +236,7 @@ const createBot = async (telegramToken, user) => {
         if (existOrder.prepayment) {
           await bot.sendMessage(
             chatId,
-            `Manzilingiz qabul qilindi.\n\nPastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\`${card_number}\`\n${card_name}`,
+            `Manzilingiz qabul qilindi.\n\nPastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\n\`${card_number}\`\n${card_name}`,
             { ...imageKeyboard, parse_mode: 'Markdown' }
           )
         } else {
