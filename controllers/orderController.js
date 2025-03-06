@@ -22,7 +22,7 @@ const order = {
 
       const orders = await orderModel
         .find(filter)
-        .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), updatedAt: -1 })
+        .sort({ ...(sortValue ? { [sortName]: sortValue } : sortName), date: 1 })
         .limit(+limit)
         .skip(+limit * (+page - 1))
         .populate([
@@ -107,56 +107,99 @@ const order = {
       const orderId = req.params.id
       const telegramToken = req.user.telegramToken
       const location = req.user.location
+      const { status, payment } = req.body
+      const web_app = {
+        reply_markup: {
+          keyboard: [
+            [
+              {
+                text: "Buketlarni ko'rish",
+                web_app: { url: `${process.env.FRONT_URL}${req.user._id}` },
+              },
+            ],
+          ],
+          resize_keyboard: true,
+        },
+      }
       const updatedOrder = await orderModel
-        .findByIdAndUpdate(orderId, req.body)
+        .findByIdAndUpdate(orderId, {
+          ...req.body,
+          ...(payment && payment === 'cancelled' ? { repayment: true } : {}),
+        })
         .populate('customerId')
 
       // check telegram token
       if (telegramToken) {
-        await bots[telegramToken].sendMessage(
-          updatedOrder.customerId.chatId,
-          `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz tayyor bo'ldi.`
-        )
-        // check delivery and location
-        if (updatedOrder.delivery === 'takeaway') {
-          let long_lat = location.split(', ')
-          if (long_lat.length === 2) {
+        if (status) {
+          await bots[telegramToken].sendMessage(
+            updatedOrder.customerId.chatId,
+            `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz ${
+              status === 'cancelled' ? 'bekor' : 'tayyor'
+            } bo'ldi.`
+          )
+          // check delivery and location
+          if (updatedOrder.delivery === 'takeaway') {
+            let long_lat = location.split(', ')
+            if (long_lat.length === 2) {
+              await bots[telegramToken].sendMessage(
+                updatedOrder.customerId.chatId,
+                location ? 'Zakazingizni pastdagi lokatsiyadan olib ketishingiz mumkin.' : ''
+              )
+              await bots[telegramToken].sendLocation(
+                updatedOrder.customerId.chatId,
+                long_lat[0],
+                long_lat[1]
+              )
+            } else {
+              await bots[telegramToken].sendMessage(
+                updatedOrder.customerId.chatId,
+                location
+                  ? `Zakazingizni <a href='${location}'>shu yerdan</a> olib ketishingiz mumkin.`
+                  : '',
+                { parse_mode: 'HTML' }
+              )
+            }
+
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              location ? 'Zakazingizni pastdagi lokatsiyadan olib ketishingiz mumkin.' : ''
-            )
-            await bots[telegramToken].sendLocation(
-              updatedOrder.customerId.chatId,
-              long_lat[0],
-              long_lat[1]
+              "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+              web_app
             )
           } else {
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              location
-                ? `Zakazingizni <a href='${location}'>shu yerdan</a> olib ketishingiz mumkin.`
-                : '',
-              { parse_mode: 'HTML' }
+              'Tez orada manzilingizga yetkazib beriladi'
+            )
+
+            await bots[telegramToken].sendMessage(
+              updatedOrder.customerId.chatId,
+              "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin"
             )
           }
-
-          await bots[telegramToken].sendMessage(
-            updatedOrder.customerId.chatId,
-            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-            web_app
-          )
         } else {
-          await bots[telegramToken].sendMessage(
-            updatedOrder.customerId.chatId,
-            'Tez orada manzilingizga yetkazib beriladi',
-            web_app
-          )
+          if (payment === 'accepted') {
+            await bots[telegramToken].sendMessage(
+              updatedOrder.customerId.chatId,
+              `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilindi.\nZakazingiz tayyor bo'lishi bilan sizga xabar beramiz.`
+            )
 
-          await bots[telegramToken].sendMessage(
-            updatedOrder.customerId.chatId,
-            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-            web_app
-          )
+            await bots[telegramToken].sendMessage(
+              updatedOrder.customerId.chatId,
+              "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+              web_app
+            )
+          } else if (payment === 'cancelled') {
+            await bots[telegramToken].sendMessage(
+              updatedOrder.customerId.chatId,
+              `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
+            )
+
+            await bots[telegramToken].sendMessage(
+              updatedOrder.customerId.chatId,
+              "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
+              { reply_markup: { remove_keyboard: true } }
+            )
+          }
         }
       }
       res.status(200).json({ success: true, message: "Zakaz o'zgartirildi" })

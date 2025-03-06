@@ -19,7 +19,10 @@ const createBot = async (telegramToken, user) => {
   const bot = new TelegramBot(telegramToken, { polling: true })
   const { telegramId, card_name, card_number } = user
 
-  bot.setMyCommands([{ command: '/start', description: "Buketlar haqida ma'lumot" }])
+  bot.setMyCommands([
+    { command: '/start', description: "Buketlar ko'rish" },
+    { command: '/deleteorder', description: 'Zakazni bekor qilish' },
+  ])
 
   const web_app = {
     reply_markup: {
@@ -59,11 +62,30 @@ const createBot = async (telegramToken, user) => {
       await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
 
       if (customer?.phone) {
-        await bot.sendMessage(
-          chatId,
-          "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-          web_app
-        )
+        const repaymentOrder = await Order.findOne({
+          customerId: customer._id,
+          repayment: true,
+          prepaymentImage: { $exists: true },
+          status: 'new',
+        }).sort({ createdAt: -1 })
+
+        if (repaymentOrder) {
+          await bot.sendMessage(
+            chatId,
+            `Sizning #No${repaymentOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
+          )
+
+          await bot.sendMessage(
+            chatId,
+            "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
+            imageKeyboard
+          )
+        } else
+          await bot.sendMessage(
+            chatId,
+            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+            web_app
+          )
       } else {
         await bot.sendMessage(
           chatId,
@@ -79,32 +101,98 @@ const createBot = async (telegramToken, user) => {
       }
     }
 
+    if (text === '/deleteorder') {
+      const orders = await Order.find({ customerId: customer._id, status: 'new' })
+
+      if (orders.length) {
+        const inlineKeyboard = {
+          reply_markup: {
+            inline_keyboard: [
+              ...orders.map(item => [
+                { text: `💐 No${item.orderNumber}`, callback_data: item._id },
+              ]),
+              [{ text: 'Hech qaysi', callback_data: 'not_delete_order' }],
+            ],
+          },
+        }
+        await bot.sendMessage(chatId, 'Qaysi zakazni bekor qilmoqchisiz?', inlineKeyboard)
+      } else {
+        await bot.sendMessage(chatId, 'Hech qanday zakaz topilmadi.')
+      }
+    }
+
     if (msg.photo) {
-      const existOrder = await Order.findOne({
+      const repaymentOrder = await Order.findOne({
         customerId: customer._id,
-        // location: { $exists: true },
-        prepayment: true,
-        prepaymentImage: { $exists: false },
+        repayment: true,
+        prepaymentImage: { $exists: true },
+        status: 'new',
       }).sort({ createdAt: -1 })
 
-      if (photoArray[2].file_id && existOrder) {
-        await Order.findByIdAndUpdate(existOrder._id, {
-          prepaymentImage: await bot.getFileLink(photoArray[2].file_id),
-        })
-
-        await bot.sendMessage(chatId, "Rasm adminga jo'natildi. Tez orada sizga xabar beramiz.")
-
-        await bot.sendMessage(
-          chatId,
-          "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-          web_app
-        )
-
-        if (existOrder && telegramId) {
-          let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${existOrder._id}'>zakazni ko'rish</a>`
-          await axios.post(
-            `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
+      if (repaymentOrder) {
+        if (photoArray[2].file_id && repaymentOrder) {
+          await Order.findByIdAndUpdate(
+            repaymentOrder._id,
+            { prepaymentImage: await bot.getFileLink(photoArray[2].file_id) },
+            { new: true }
           )
+
+          await bot.sendMessage(
+            chatId,
+            "Rasm adminga jo'natildi. Tez orada sizga xabar beramiz.",
+            imageKeyboard
+          )
+
+          if (repaymentOrder && telegramId) {
+            let my_text = `\`${repaymentOrder.orderNumber}\` qayta to'lov qildi: [zakazni ko'rish](${process.env.FRONT_URL}view/${repaymentOrder._id})`
+            await axios.post(
+              // `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
+              `https://api.telegram.org/bot${telegramToken}/sendPhoto`,
+              {
+                chat_id: telegramId,
+                photo: photoArray[2].file_id,
+                caption: my_text,
+                parse_mode: 'Markdown',
+              }
+            )
+          }
+        }
+      } else {
+        const existOrder = await Order.findOne({
+          customerId: customer._id,
+          prepayment: true,
+          prepaymentImage: { $exists: false },
+          status: 'new',
+        }).sort({ createdAt: -1 })
+
+        if (photoArray[2].file_id && existOrder) {
+          await Order.findByIdAndUpdate(
+            existOrder._id,
+            { prepaymentImage: await bot.getFileLink(photoArray[2].file_id) },
+            { new: true }
+          )
+
+          await bot.sendMessage(chatId, "Rasm adminga jo'natildi. Tez orada sizga xabar beramiz.")
+
+          await bot.sendMessage(
+            chatId,
+            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+            web_app
+          )
+
+          if (existOrder && telegramId) {
+            let my_text = `Yangi zakaz: [zakazni ko'rish](${process.env.FRONT_URL}view/${existOrder._id})`
+            await axios.post(
+              // `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
+              `https://api.telegram.org/bot${telegramToken}/sendPhoto`,
+              {
+                chat_id: telegramId,
+                photo: photoArray[2].file_id,
+                caption: my_text,
+                parse_mode: 'HTML',
+              }
+            )
+          }
         }
       }
     }
@@ -228,6 +316,7 @@ const createBot = async (telegramToken, user) => {
       const existOrder = await Order.findOne({
         customerId: customer._id,
         location: { $exists: false },
+        status: 'new',
       }).sort({ createdAt: -1 })
 
       if (existOrder) {
@@ -263,29 +352,73 @@ const createBot = async (telegramToken, user) => {
   })
 
   // Tugma bosilganda
-  // bot.on('callback_query', query => {
-  //   const chatId = query.message.chat.id
-  //   const selectedOrder = query.data
+  bot.on('callback_query', async query => {
+    const chatId = query.message.chat.id
+    const selectedOrder = query.data
+    const customer = await Customer.findOne({ chatId })
+    const messageId = query.message.message_id
 
-  //   bot.sendMessage(
-  //     chatId,
-  //     `Siz tanladingiz: ${selectedOrder}\nEndi manzilingizni yuboring!`,
-  //     locationKeyboard
-  //   )
+    if (selectedOrder !== 'not_delete_order') {
+      const deletedOrder = await Order.findByIdAndUpdate(
+        selectedOrder,
+        { status: 'cancelled' },
+        { new: true }
+      )
 
-  //   // Tanlangan buyurtmani saqlab qo'yamiz (foydalanuvchidan keyin keladigan location bilan bog'lash uchun)
-  //   bot.once('message', msg => {
-  //     if (msg.location) {
-  //       const { latitude, longitude } = msg.location
+      await bot.sendMessage(
+        chatId,
+        `No${deletedOrder.orderNumber} raqamli zakazingiz bekor qilindi.`
+      )
 
-  //       bot.sendMessage(
-  //         chatId,
-  //         `✅ Buyurtma: ${selectedOrder}\n📍 Location:\n🌍 Latitude: ${latitude}\n📍 Longitude: ${longitude}`,
-  //         web_app
-  //       )
-  //     }
-  //   })
-  // })
+      if (deletedOrder && telegramId) {
+        let my_text = `\`${deletedOrder.orderNumber}\` raqamli zakaz bekor qilindi.`
+        await axios.post(
+          `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
+        )
+      }
+
+      const orders = await Order.find({ customerId: customer._id, status: 'new' })
+
+      if (orders.length) {
+        await bot.editMessageReplyMarkup(
+          {
+            inline_keyboard: [
+              ...orders.map(item => [
+                { text: `💐 No${item.orderNumber}`, callback_data: item._id },
+              ]),
+              [{ text: 'Hech qaysi', callback_data: 'not_delete_order' }],
+            ],
+          },
+          { chat_id: chatId, message_id: messageId }
+        )
+      } else await bot.deleteMessage(chatId, messageId)
+    } else await bot.deleteMessage(chatId, messageId)
+
+    const repaymentOrder = await Order.findOne({
+      customerId: customer._id,
+      repayment: true,
+      prepaymentImage: { $exists: true },
+      status: 'new',
+    }).sort({ createdAt: -1 })
+
+    if (repaymentOrder) {
+      await bot.sendMessage(
+        chatId,
+        `Sizning #No${repaymentOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
+      )
+
+      await bot.sendMessage(
+        chatId,
+        "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
+        imageKeyboard
+      )
+    } else
+      await bot.sendMessage(
+        chatId,
+        "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+        web_app
+      )
+  })
 
   bots[telegramToken] = bot
   console.log(`🚀 Bot ishga tushdi: ${telegramToken}`.green.bold)
