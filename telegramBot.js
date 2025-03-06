@@ -189,7 +189,7 @@ const createBot = async (telegramToken, user) => {
                 chat_id: telegramId,
                 photo: photoArray[2].file_id,
                 caption: my_text,
-                parse_mode: 'HTML',
+                parse_mode: 'Markdown',
               }
             )
           }

@@ -26,7 +26,7 @@ const orderSchema = new Schema(
       price: { type: Number, require: true },
     },
     date: { type: Date, require: true },
-    prepayment: { type: String, enum: ['pending', 'accepted', 'cancelled'], default: 'pending' },
+    payment: { type: String, enum: ['pending', 'accepted', 'cancelled'], default: 'pending' },
     prepayment: { type: Boolean, default: false },
     repayment: { type: Boolean, default: false },
     prepaymentImage: { type: String },
