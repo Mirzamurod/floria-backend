@@ -106,6 +106,7 @@ const order = {
     try {
       const orderId = req.params.id
       const telegramToken = req.user.telegramToken
+      const telegramId = req.user.telegramId
       const location = req.user.location
       const { status, payment } = req.body
       const web_app = {
@@ -195,8 +196,15 @@ const order = {
 
               await bots[telegramToken].sendMessage(
                 updatedOrder.customerId.chatId,
-                `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi va zakazingiz bekor qilindi.`
+                `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan ikkinchi marta to'lovingiz qabul qilinmadi va zakazingiz bekor qilindi.`
               )
+
+              if (telegramId) {
+                let my_text = `\`${updatedOrder.orderNumber}\` raqamli zakaz bekor qilindi.`
+                await axios.post(
+                  `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
+                )
+              }
             } else {
               await bots[telegramToken].sendMessage(
                 updatedOrder.customerId.chatId,
