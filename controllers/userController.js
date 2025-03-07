@@ -71,13 +71,16 @@ const user = {
   editTelegramKey: expressAsyncHandler(async (req, res) => {
     try {
       const userId = req.user._id
-      const { telegramToken, telegramId, location, card_number, card_name } = req.body
+      const { telegramToken, telegramId, location, card_number, card_name, userName, userPhone } =
+        req.body
       await userModel.findByIdAndUpdate(userId, {
         telegramToken,
         telegramId,
         location,
         card_number,
         card_name,
+        userName,
+        userPhone,
       })
 
       res.status(200).json({ success: true, message: "Foydalanuvchi o'zgartirildi" })

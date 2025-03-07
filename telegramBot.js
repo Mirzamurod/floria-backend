@@ -17,11 +17,13 @@ const createBot = async (telegramToken, user) => {
   }
 
   const bot = new TelegramBot(telegramToken, { polling: true })
-  const { telegramId, card_name, card_number } = user
+  const { telegramId, card_name, card_number, userName, userPhone } = user
 
   bot.setMyCommands([
     { command: '/start', description: "Buketlar ko'rish" },
     { command: '/deleteorder', description: 'Zakazni bekor qilish' },
+    { command: '/userinfo', description: "Bot egasi haqida ma'lumot" },
+    { command: '/cardinfo', description: "Karta haqida ma'lumot" },
   ])
 
   const web_app = {
@@ -120,6 +122,16 @@ const createBot = async (telegramToken, user) => {
         await bot.sendMessage(chatId, 'Hech qanday zakaz topilmadi.')
       }
     }
+
+    if (text === '/userinfo')
+      await bot.sendMessage(chatId, `Ismi: ${userName}\nTelefon raqami: ${userPhone}`)
+
+    if (text === '/cardinfo')
+      await bot.sendMessage(
+        chatId,
+        `Karta raqami: \`${card_number}\`\nKarta egasining ismi: ${card_name}`,
+        { parse_mode: 'Markdown' }
+      )
 
     if (msg.photo) {
       const repaymentOrder = await Order.findOne({
@@ -432,10 +444,12 @@ const createBot = async (telegramToken, user) => {
 // 🔄 **Server qayta ishga tushganda barcha botlarni tiklash**
 export const restoreBots = async () => {
   const tokens = await User.find({ role: 'client', telegramToken: { $exists: true }, block: false })
-  tokens.forEach(({ telegramToken, telegramId, _id, card_name, card_number }) => {
-    if (!bots[telegramToken] && telegramToken)
-      createBot(telegramToken, { telegramId, _id, card_name, card_number })
-  })
+  tokens.forEach(
+    ({ telegramToken, telegramId, _id, card_name, card_number, userName, userPhone }) => {
+      if (!bots[telegramToken] && telegramToken)
+        createBot(telegramToken, { telegramId, _id, card_name, card_number, userName, userPhone })
+    }
+  )
 
   Object.keys(bots).forEach(telegramToken => {
     if (!tokens.some(t => t.telegramToken === telegramToken)) {

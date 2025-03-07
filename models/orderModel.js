@@ -30,6 +30,7 @@ const orderSchema = new Schema(
     prepayment: { type: Boolean, default: false },
     repayment: { type: Boolean, default: false },
     prepaymentImage: { type: String },
+    prepaymentNumber: { type: Number, default: 0 },
     delivery: { type: String, enum: ['delivery', 'takeaway'], default: 'takeaway' },
     status: { type: String, enum: ['new', 'old', 'cancelled'], default: 'new' },
     location: { longitude: { type: Number }, latitude: { type: Number } },

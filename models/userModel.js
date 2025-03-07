@@ -12,6 +12,8 @@ const userSchema = new Schema(
     location: { type: String },
     card_number: { type: String },
     card_name: { type: String },
+    userName: { type: String },
+    userPhone: { type: String },
   },
   { timestamps: true }
 )
