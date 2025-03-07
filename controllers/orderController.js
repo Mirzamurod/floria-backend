@@ -122,10 +122,11 @@ const order = {
         },
       }
       const updatedOrder = await orderModel
-        .findByIdAndUpdate(orderId, {
-          ...req.body,
-          ...(payment && payment === 'cancelled' ? { repayment: true } : {}),
-        })
+        .findByIdAndUpdate(
+          orderId,
+          { ...req.body, ...(payment && payment === 'cancelled' ? { repayment: true } : {}) },
+          { new: true }
+        )
         .populate('customerId')
 
       // check telegram token
@@ -189,16 +190,25 @@ const order = {
               web_app
             )
           } else if (payment === 'cancelled') {
-            await bots[telegramToken].sendMessage(
-              updatedOrder.customerId.chatId,
-              `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
-            )
+            if (updatedOrder.prepaymentNumber >= 2) {
+              await orderModel.findByIdAndUpdate(orderId, { status: 'cancelled' })
 
-            await bots[telegramToken].sendMessage(
-              updatedOrder.customerId.chatId,
-              "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
-              { reply_markup: { remove_keyboard: true } }
-            )
+              await bots[telegramToken].sendMessage(
+                updatedOrder.customerId.chatId,
+                `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi va zakazingiz bekor qilindi.`
+              )
+            } else {
+              await bots[telegramToken].sendMessage(
+                updatedOrder.customerId.chatId,
+                `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
+              )
+
+              await bots[telegramToken].sendMessage(
+                updatedOrder.customerId.chatId,
+                "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
+                { reply_markup: { remove_keyboard: true } }
+              )
+            }
           }
         }
       }

@@ -145,7 +145,11 @@ const createBot = async (telegramToken, user) => {
         if (photoArray[2].file_id && repaymentOrder) {
           await Order.findByIdAndUpdate(
             repaymentOrder._id,
-            { prepaymentImage: await bot.getFileLink(photoArray[2].file_id) },
+            {
+              prepaymentImage: await bot.getFileLink(photoArray[2].file_id),
+              prepaymentNumber: 2,
+              payment: 'pending',
+            },
             { new: true }
           )
 
@@ -180,7 +184,11 @@ const createBot = async (telegramToken, user) => {
         if (photoArray[2].file_id && existOrder) {
           await Order.findByIdAndUpdate(
             existOrder._id,
-            { prepaymentImage: await bot.getFileLink(photoArray[2].file_id) },
+            {
+              prepaymentImage: await bot.getFileLink(photoArray[2].file_id),
+              prepaymentNumber: 1,
+              payment: 'pending',
+            },
             { new: true }
           )
 
@@ -443,7 +451,15 @@ const createBot = async (telegramToken, user) => {
 
 // 🔄 **Server qayta ishga tushganda barcha botlarni tiklash**
 export const restoreBots = async () => {
-  const tokens = await User.find({ role: 'client', telegramToken: { $exists: true }, block: false })
+  const tokens = await User.find({
+    block: false,
+    role: 'client',
+    userName: { $exists: true, $ne: '', $nin: ['', null] },
+    userPhone: { $exists: true, $ne: '', $nin: ['', null] },
+    card_name: { $exists: true, $ne: '', $nin: ['', null] },
+    card_number: { $exists: true, $ne: '', $nin: ['', null] },
+    telegramToken: { $exists: true, $ne: '', $nin: ['', null] },
+  })
   tokens.forEach(
     ({ telegramToken, telegramId, _id, card_name, card_number, userName, userPhone }) => {
       if (!bots[telegramToken] && telegramToken)
