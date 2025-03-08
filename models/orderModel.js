@@ -32,7 +32,7 @@ const orderSchema = new Schema(
     prepaymentImage: { type: String },
     prepaymentNumber: { type: Number, default: 0 },
     delivery: { type: String, enum: ['delivery', 'takeaway'], default: 'takeaway' },
-    status: { type: String, enum: ['new', 'old', 'cancelled'], default: 'new' },
+    status: { type: String, enum: ['new', 'old', 'cancelled', 'unsubmitted'], default: 'new' },
     location: { longitude: { type: Number }, latitude: { type: Number } },
     userId: { type: Schema.Types.ObjectId, ref: 'User', require: true },
     customerId: { type: Schema.Types.ObjectId, ref: 'Customer', require: true },

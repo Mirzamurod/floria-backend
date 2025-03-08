@@ -378,66 +378,85 @@ const createBot = async (telegramToken, user) => {
     const customer = await Customer.findOne({ chatId })
     const messageId = query.message.message_id
 
-    if (selectedOrder !== 'not_delete_order') {
-      const deletedOrder = await Order.findByIdAndUpdate(
-        selectedOrder,
-        { status: 'cancelled' },
-        { new: true }
-      )
+    if (selectedOrder.split('_')[0] === 'yes') {
+      await bot.sendMessage(chatId, 'Javobingiz uchun rahmat.')
 
-      await bot.sendMessage(
-        chatId,
-        `No${deletedOrder.orderNumber} raqamli zakazingiz bekor qilindi.`
-      )
+      await bot.deleteMessage(chatId, messageId)
 
-      if (deletedOrder && telegramId) {
-        let my_text = `\`${deletedOrder.orderNumber}\` raqamli zakaz bekor qilindi.`
-        await axios.post(
-          `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
-        )
-      }
-
-      const orders = await Order.find({ customerId: customer._id, status: 'new' })
-
-      if (orders.length) {
-        await bot.editMessageReplyMarkup(
-          {
-            inline_keyboard: [
-              ...orders.map(item => [
-                { text: `💐 No${item.orderNumber}`, callback_data: item._id },
-              ]),
-              [{ text: 'Hech qaysi', callback_data: 'not_delete_order' }],
-            ],
-          },
-          { chat_id: chatId, message_id: messageId }
-        )
-      } else await bot.deleteMessage(chatId, messageId)
-    } else await bot.deleteMessage(chatId, messageId)
-
-    const repaymentOrder = await Order.findOne({
-      customerId: customer._id,
-      repayment: true,
-      prepaymentImage: { $exists: true },
-      status: 'new',
-    }).sort({ createdAt: -1 })
-
-    if (repaymentOrder) {
-      await bot.sendMessage(
-        chatId,
-        `Sizning #No${repaymentOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
-      )
-
-      await bot.sendMessage(
-        chatId,
-        "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
-        imageKeyboard
-      )
-    } else
       await bot.sendMessage(
         chatId,
         "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
         web_app
       )
+
+      await Order.findByIdAndUpdate(selectedOrder.split('_')[1], { status: 'old' })
+    } else if (selectedOrder.split('_')[0] === 'no') {
+      await bot.sendMessage(
+        chatId,
+        `Sotuvchiga telefon qilib gaplashing, nega buketingiz tayyor bo'lmaganligi haqida.\n\nIsmi: ${userName}\nTelefon raqami: ${userPhone}`
+      )
+    } else {
+      if (selectedOrder !== 'not_delete_order') {
+        const deletedOrder = await Order.findByIdAndUpdate(
+          selectedOrder,
+          { status: 'cancelled' },
+          { new: true }
+        )
+
+        await bot.sendMessage(
+          chatId,
+          `No${deletedOrder.orderNumber} raqamli zakazingiz bekor qilindi.`
+        )
+
+        if (deletedOrder && telegramId) {
+          let my_text = `\`${deletedOrder.orderNumber}\` raqamli zakaz bekor qilindi.`
+          await axios.post(
+            `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
+          )
+        }
+
+        const orders = await Order.find({ customerId: customer._id, status: 'new' })
+
+        if (orders.length) {
+          await bot.editMessageReplyMarkup(
+            {
+              inline_keyboard: [
+                ...orders.map(item => [
+                  { text: `💐 No${item.orderNumber}`, callback_data: item._id },
+                ]),
+                [{ text: 'Hech qaysi', callback_data: 'not_delete_order' }],
+              ],
+            },
+            { chat_id: chatId, message_id: messageId }
+          )
+        } else await bot.deleteMessage(chatId, messageId)
+      } else await bot.deleteMessage(chatId, messageId)
+
+      const repaymentOrder = await Order.findOne({
+        customerId: customer._id,
+        repayment: true,
+        prepaymentImage: { $exists: true },
+        status: 'new',
+      }).sort({ createdAt: -1 })
+
+      if (repaymentOrder) {
+        await bot.sendMessage(
+          chatId,
+          `Sizning #No${repaymentOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
+        )
+
+        await bot.sendMessage(
+          chatId,
+          "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
+          imageKeyboard
+        )
+      } else
+        await bot.sendMessage(
+          chatId,
+          "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
+          web_app
+        )
+    }
   })
 
   bots[telegramToken] = bot
