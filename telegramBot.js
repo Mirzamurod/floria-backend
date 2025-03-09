@@ -389,7 +389,18 @@ const createBot = async (telegramToken, user) => {
         web_app
       )
 
-      await Order.findByIdAndUpdate(selectedOrder.split('_')[1], { status: 'old' })
+      const updatedOrder = await Order.findByIdAndUpdate(
+        selectedOrder.split('_')[1],
+        { status: 'old' },
+        { new: true }
+      )
+
+      if (updatedOrder && telegramId) {
+        let my_text = `Klient \`${updatedOrder.orderNumber}\` raqamli zakazni qabul qildi.`
+        await axios.post(
+          `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
+        )
+      }
     } else if (selectedOrder.split('_')[0] === 'no') {
       await bot.sendMessage(
         chatId,

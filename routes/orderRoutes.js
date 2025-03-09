@@ -10,5 +10,6 @@ router
   .get(protect, client, order.getOrder)
   .patch(protect, client, order.editOrder)
   .delete(protect, client, order.deleteOrder)
+router.get('/unsubmmitted/:id', protect, client, order.unsubmittedOrder)
 
 export default router

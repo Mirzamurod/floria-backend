@@ -240,6 +240,48 @@ const order = {
       res.status(400).json({ success: false, message: error.message })
     }
   }),
+
+  /**
+   * @desc    Unsubmitted Order
+   * @route   GET /api/orders/unsubmitted/:id
+   * @access  Private
+   */
+  unsubmittedOrder: expressAsyncHandler(async (req, res) => {
+    try {
+      const orderId = req.params.id
+      const telegramToken = req.user.telegramToken
+      const order = await orderModel.findById(orderId).populate('customerId')
+
+      if (telegramToken && order.status === 'unsubmitted') {
+        await bots[telegramToken].sendMessage(
+          order.customerId.chatId,
+          `Sotuvchi sizdan #No${order.orderNumber} raqamli zakazingizni oldingizmi deb so'rayapti?`,
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  { text: 'Ha', callback_data: `yes_${order._id}` },
+                  { text: "Yo'q", callback_data: `no_${order._id}` },
+                ],
+              ],
+            },
+          }
+        )
+
+        res.status(200).json({ success: true, message: 'Klientga habar yuborildi.' })
+      } else {
+        res
+          .status(200)
+          .json({
+            success: true,
+            message:
+              "Zakaz Topshirilmagan zakazlar bo'limida emas, Eski zakazlar yoki Bekor bo'lganlar bo'limidan qarab ko'ring",
+          })
+      }
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
+  }),
 }
 
 export default order
