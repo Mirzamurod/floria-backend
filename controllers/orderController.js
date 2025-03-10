@@ -270,13 +270,11 @@ const order = {
 
         res.status(200).json({ success: true, message: 'Klientga habar yuborildi.' })
       } else {
-        res
-          .status(200)
-          .json({
-            success: true,
-            message:
-              "Zakaz Topshirilmagan zakazlar bo'limida emas, Eski zakazlar yoki Bekor bo'lganlar bo'limidan qarab ko'ring",
-          })
+        res.status(200).json({
+          success: true,
+          message:
+            "Zakaz 'Topshirilmagan zakazlar' bo'limida emas, 'Eski zakazlar' yoki 'Bekor bo'lganlar' bo'limidan qarab ko'ring",
+        })
       }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
