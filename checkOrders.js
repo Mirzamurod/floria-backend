@@ -1,4 +1,5 @@
-import { toZonedTime, toDate } from 'date-fns-tz'
+import { toZonedTime } from 'date-fns-tz'
+import { addDays, startOfDay } from 'date-fns'
 import cron from 'node-cron'
 import axios from 'axios'
 import Order from './models/orderModel.js'
@@ -12,12 +13,13 @@ async function checkAndUpdateStatus() {
   try {
     // Hozirgi sanani O'zbekiston vaqtida olish
     const now = new Date()
-    const nowInUzbekistan = toDate(toZonedTime(now, UZBEKISTAN_TIMEZONE)) // Oʻzbekiston sanasi (00:00)
+    const nowInUzbekistan = toZonedTime(now, UZBEKISTAN_TIMEZONE) // Oʻzbekiston sanasi (00:00)
+    const nextDay = addDays(startOfDay(nowInUzbekistan), 1)
 
     // Statusi active va muddati o'tgan ma'lumotlarni olish
     const expiredOrders = await Order.find({
       status: 'new',
-      date: { $lt: nowInUzbekistan },
+      date: { $lt: nextDay },
     }).populate([
       { path: 'customerId', model: 'Customer' },
       { path: 'userId', model: 'User' },
