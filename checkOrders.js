@@ -95,7 +95,7 @@ async function checkAndUpdateStatus() {
 
 // Har 1 soatda tekshirish uchun cron job
 export const checkOrders = async () =>
-  cron.schedule('0 * * * * *', () => {
+  cron.schedule('0 * * * *', () => {
     console.log('Checking for expired orders...')
     checkAndUpdateStatus()
   })
