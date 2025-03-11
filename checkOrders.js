@@ -30,7 +30,6 @@ async function checkAndUpdateStatus() {
     if (expiredOrders.length) {
       expiredOrders.map(async order => {
         let text = ''
-        console.log(order.userId.telegramToken)
         if (
           (order.prepayment && !order.prepaymentImage) ||
           (order.prepayment &&
@@ -97,7 +96,7 @@ async function checkAndUpdateStatus() {
 
 // Har 1 soatda tekshirish uchun cron job
 export const checkOrders = async () =>
-  cron.schedule('0 * * * * *', () => {
+  cron.schedule('0 * * * *', () => {
     console.log('Checking for expired orders...')
     checkAndUpdateStatus()
   })
