@@ -1,9 +1,10 @@
-import { toZonedTime } from 'date-fns-tz'
-import { addDays, addHours, startOfDay } from 'date-fns'
+import { fromZonedTime } from 'date-fns-tz'
 import cron from 'node-cron'
 import axios from 'axios'
 import Order from './models/orderModel.js'
+import User from './models/userModel.js'
 import { bots } from './telegramBot.js'
+import { addDays, format } from 'date-fns'
 
 // Oʻzbekiston vaqt zonasi
 const UZBEKISTAN_TIMEZONE = 'Asia/Tashkent'
@@ -13,19 +14,54 @@ async function checkAndUpdateStatus() {
   try {
     // Hozirgi sanani O'zbekiston vaqtida olish
     const now = new Date()
-    const nowInUzbekistan = toZonedTime(now, UZBEKISTAN_TIMEZONE) // Oʻzbekiston sanasi (00:00)
-    const nextDay = addDays(startOfDay(nowInUzbekistan), 1)
-    console.log(nowInUzbekistan.getDate())
-    console.log(nextDay.getDate())
+    const nowInUzb = fromZonedTime(now, UZBEKISTAN_TIMEZONE) // Oʻzbekiston sanasi (00:00)
 
-    // Statusi active va muddati o'tgan ma'lumotlarni olish
-    const expiredOrders = await Order.find({
-      status: 'new',
-      date: { $lt: nextDay },
-    }).populate([
+    const paidUsers = await User.find({
+      block: false,
+      role: 'client',
+      date: { $gte: nowInUzb, $lt: addDays(nowInUzb, 1) },
+      plan: { $in: ['week', 'month'] },
+    })
+    const expiredUsers = await User.find({
+      block: false,
+      role: 'client',
+      date: { $lt: nowInUzb },
+      plan: { $in: ['week', 'month'] },
+    })
+    const expiredOrders = await Order.find({ status: 'new', date: { $lt: nowInUzb } }).populate([
       { path: 'customerId', model: 'Customer' },
       { path: 'userId', model: 'User' },
     ])
+
+    if (paidUsers.length) {
+      paidUsers.map(async user => {
+        if (user.telegramToken && user.telegramId) {
+          let my_text = `${format(
+            addDays(nowInUzb, 1),
+            'dd.MM.yyyy'
+          )} gacha to'lov qilishingiz kerak, aks holda telegram botingiz bloklanadi.`
+          await axios.post(
+            `https://api.telegram.org/bot${user.telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}`
+          )
+        }
+      })
+    }
+
+    if (expiredUsers.length) {
+      await User.updateMany(
+        { _id: { $in: expiredUsers.map(user => user._id) } },
+        { $set: { block: true, plan: '' } }
+      )
+
+      expiredUsers.map(async user => {
+        if (user.telegramToken && user.telegramId) {
+          let my_text = "Sizning telegram botingiz bloklandi, sababi to'lov qilishingiz kerak."
+          await axios.post(
+            `https://api.telegram.org/bot${user.telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}`
+          )
+        }
+      })
+    }
 
     if (expiredOrders.length) {
       expiredOrders.map(async order => {
@@ -96,6 +132,7 @@ async function checkAndUpdateStatus() {
 
 // Har 1 soatda tekshirish uchun cron job
 export const checkOrders = async () =>
+  // cron.schedule('0 3 * * *', () => {
   cron.schedule('0 * * * * *', () => {
     console.log('Checking for expired orders...')
     checkAndUpdateStatus()

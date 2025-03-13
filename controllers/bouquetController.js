@@ -4,6 +4,7 @@ import path from 'path'
 import sharp from 'sharp'
 import fs from 'fs/promises'
 import bouquetModel from './../models/bouquetModel.js'
+import userModel from '../models/userModel.js'
 
 const bouquet = {
   /**
@@ -55,20 +56,23 @@ const bouquet = {
     if (category) filter.category = category
 
     try {
-      const totalCount = await bouquetModel.countDocuments(filter)
+      const user = await userModel.findOne({ _id: userId, block: false })
+      if (user) {
+        const totalCount = await bouquetModel.countDocuments(filter)
 
-      const bouquets = await bouquetModel
-        .find(filter)
-        .limit(+limit)
-        .skip(+limit * (+page - 1))
-        .populate([{ path: 'category', model: 'Category' }])
+        const bouquets = await bouquetModel
+          .find(filter)
+          .limit(+limit)
+          .skip(+limit * (+page - 1))
+          .populate([{ path: 'category', model: 'Category' }])
 
-      res.status(200).json({
-        page,
-        data: bouquets,
-        pageLists: Math.ceil(totalCount / limit) || 1,
-        count: totalCount,
-      })
+        res.status(200).json({
+          page,
+          data: bouquets,
+          pageLists: Math.ceil(totalCount / limit) || 1,
+          count: totalCount,
+        })
+      } else res.status(200).json({ page: 1, data: [], pageLists: 1, count: 0 })
     } catch (error) {
       res.status(400).json({ message: error.message, success: false })
     }

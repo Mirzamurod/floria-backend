@@ -53,10 +53,15 @@ const user = {
    */
   editClientByAdmin: expressAsyncHandler(async (req, res) => {
     const clientId = req.params.id
-    const { block } = req.body
+    const { block, plan, date } = req.body
 
     try {
-      await userModel.findByIdAndUpdate(clientId, { block })
+      await userModel.findByIdAndUpdate(clientId, {
+        block,
+        plan,
+        date,
+        ...(plan ? { block: false } : {}),
+      })
       res.status(200).json({ success: true, message: 'User updated' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
