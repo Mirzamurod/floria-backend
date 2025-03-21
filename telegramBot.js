@@ -142,7 +142,7 @@ const createBot = async (telegramToken, user) => {
       }).sort({ createdAt: -1 })
 
       if (repaymentOrder) {
-        if (photoArray[2].file_id && repaymentOrder) {
+        if (photoArray[2].file_id && repaymentOrder && repaymentOrder.prepaymentNumber === 1) {
           await Order.findByIdAndUpdate(
             repaymentOrder._id,
             {
