@@ -218,11 +218,12 @@ const createBot = async (telegramToken, user) => {
     }
 
     if (msg.contact) {
+      let phone_number = msg.contact.phone_number
       await Customer.create({
         chatId,
         userId: user._id,
         name: msg.contact.first_name,
-        phone: msg.contact.phone_number,
+        phone: phone_number.charAt(0) === '+' ? phone_number : `+${phone_number}`,
       })
 
       await bot.sendMessage(
