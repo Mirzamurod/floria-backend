@@ -2,7 +2,7 @@ import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
 import path from 'path'
 import sharp from 'sharp'
-import fs from 'fs/promises'
+import { existsSync, unlinkSync } from 'fs'
 import bouquetModel from './../models/bouquetModel.js'
 import userModel from '../models/userModel.js'
 
@@ -168,8 +168,13 @@ const bouquet = {
             })
 
             const imageUrl = './images/'
-            const image = existsBouquet?.image?.split('/')
-            fs.unlink(imageUrl + image[image.length - 1])
+            // const image = existsBouquet?.image?.split('/')
+            // fs.unlink(imageUrl + image[image.length - 1])
+            const image =
+              imageUrl +
+              existsBouquet?.image?.split('/')[existsBouquet?.image?.split('/').length - 1]
+            if (existsSync(image)) unlinkSync(image)
+            else console.log('❌ Fayl topilmadi:', image)
 
             res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
           }
@@ -208,8 +213,10 @@ const bouquet = {
       const bouquetId = req.params.id
       const deletedBouquet = await bouquetModel.findByIdAndDelete(bouquetId)
       const imageUrl = './images/'
-      const image = deletedBouquet?.image?.split('/')
-      fs.unlink(imageUrl + image[image.length - 1])
+      const image =
+        imageUrl + deletedBouquet?.image?.split('/')[deletedBouquet?.image?.split('/').length - 1]
+      if (existsSync(image)) unlinkSync(image)
+      else console.log('❌ Fayl topilmadi:', image)
 
       res.status(200).json({ success: true, message: "Buket o'chirildi" })
     } catch (error) {

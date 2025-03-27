@@ -2,7 +2,7 @@ import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
 import path from 'path'
 import sharp from 'sharp'
-import fs from 'fs/promises'
+import { existsSync, unlinkSync } from 'fs'
 import flowerModel from '../models/flowerModel.js'
 
 const flower = {
@@ -163,8 +163,12 @@ const flower = {
             })
 
             const imageUrl = './images/'
-            const image = existsFlower?.image?.split('/')
-            fs.unlink(imageUrl + image[image.length - 1])
+            // const image = existsFlower?.image?.split('/')
+            // fs.unlink(imageUrl + image[image.length - 1])
+            const image =
+              imageUrl + existsFlower?.image?.split('/')[existsFlower?.image?.split('/').length - 1]
+            if (existsSync(image)) unlinkSync(image)
+            else console.log('❌ Fayl topilmadi:', image)
 
             res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
           }
@@ -203,8 +207,10 @@ const flower = {
       const flowerId = req.params.id
       const deletedFlower = await flowerModel.findByIdAndDelete(flowerId)
       const imageUrl = './images/'
-      const image = deletedFlower?.image?.split('/')
-      fs.unlink(imageUrl + image[image.length - 1])
+      const image =
+        imageUrl + deletedFlower?.image?.split('/')[deletedFlower?.image?.split('/').length - 1]
+      if (existsSync(image)) unlinkSync(image)
+      else console.log('❌ Fayl topilmadi:', image)
 
       res.status(200).json({ success: true, message: "Gul o'zgatirildi" })
     } catch (error) {
