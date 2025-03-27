@@ -201,7 +201,11 @@ const flower = {
   deleteFlower: expressAsyncHandler(async (req, res) => {
     try {
       const flowerId = req.params.id
-      await flowerModel.findByIdAndDelete(flowerId)
+      const deletedFlower = await flowerModel.findByIdAndDelete(flowerId)
+      const imageUrl = './images/'
+      const image = deletedFlower?.image?.split('/')
+      fs.unlink(imageUrl + image[image.length - 1])
+
       res.status(200).json({ success: true, message: "Gul o'zgatirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })

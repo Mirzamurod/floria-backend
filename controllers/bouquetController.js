@@ -206,7 +206,11 @@ const bouquet = {
   deleteBouquet: expressAsyncHandler(async (req, res) => {
     try {
       const bouquetId = req.params.id
-      await bouquetModel.findByIdAndDelete(bouquetId)
+      const deletedBouquet = await bouquetModel.findByIdAndDelete(bouquetId)
+      const imageUrl = './images/'
+      const image = deletedBouquet?.image?.split('/')
+      fs.unlink(imageUrl + image[image.length - 1])
+
       res.status(200).json({ success: true, message: "Buket o'chirildi" })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
