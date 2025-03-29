@@ -5,6 +5,7 @@ import Order from './models/orderModel.js'
 import User from './models/userModel.js'
 import { bots } from './telegramBot.js'
 import { addDays, format } from 'date-fns'
+import languages from './languages/index.js'
 
 // Oʻzbekiston vaqt zonasi
 const UZBEKISTAN_TIMEZONE = 'Asia/Tashkent'
@@ -36,10 +37,9 @@ async function checkAndUpdateStatus() {
     if (paidUsers.length) {
       paidUsers.map(async user => {
         if (user.telegramToken && user.telegramId) {
-          let my_text = `${format(
-            addDays(nowInUzb, 1),
-            'dd.MM.yyyy'
-          )} gacha to'lov qilishingiz kerak, aks holda telegram botingiz bloklanadi.`
+          let my_text = `${languages['uz'].paymentreminder(
+            format(addDays(nowInUzb, 1), 'dd.MM.yyyy')
+          )}%0A%0A${languages['ru'].paymentreminder(format(addDays(nowInUzb, 1), 'dd.MM.yyyy'))}`
           await axios.post(
             `https://api.telegram.org/bot${user.telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}`
           )
@@ -55,7 +55,7 @@ async function checkAndUpdateStatus() {
 
       expiredUsers.map(async user => {
         if (user.telegramToken && user.telegramId) {
-          let my_text = "Sizning telegram botingiz bloklandi, sababi to'lov qilishingiz kerak."
+          let my_text = `${languages['uz'].blockedbot}%0A%0A${languages['ru'].blockedbot}`
           await axios.post(
             `https://api.telegram.org/bot${user.telegramToken}/sendMessage?chat_id=${user.telegramId}&text=${my_text}`
           )
@@ -73,9 +73,8 @@ async function checkAndUpdateStatus() {
             order.prepaymentNumber === 1 &&
             order.payment === 'cancelled')
         )
-          text = "oldindan to'lov qilishingiz kerak bo'lgan."
-        else if (order.delivery === 'delivery' && !order.location)
-          text = "manzilingizni yuborishingiz kerak bo'lgan."
+          text = 1
+        else if (order.delivery === 'delivery' && !order.location) text = 2
 
         if (text) {
           // Statusni cancelled qilish
@@ -83,11 +82,13 @@ async function checkAndUpdateStatus() {
 
           await bots[order.userId.telegramToken].sendMessage(
             order.customerId.chatId,
-            `Sizning #No${order.orderNumber} raqamli zakazing bekor qilindi, sababi ${text}`
+            languages[order.customerId.lang].reasoncancelled
           )
 
           if (order.userId.telegramId) {
-            let my_text = `\`${order.orderNumber}\` raqamli zakaz bekor qilindi.`
+            let my_text = `${languages['uz'].cancelledorder(order.orderNumber)}%0A%0A${languages[
+              'ru'
+            ].cancelledorder(order.orderNumber)}`
             await axios.post(
               `https://api.telegram.org/bot${order.userId.telegramToken}/sendMessage?chat_id=${order.userId.telegramId}&text=${my_text}&parse_mode=markdown`
             )
@@ -95,13 +96,16 @@ async function checkAndUpdateStatus() {
         } else {
           await bots[order.userId.telegramToken].sendMessage(
             order.customerId.chatId,
-            `Siz #No${order.orderNumber} raqamli zakazingizni oldingizmi?`,
+            languages[order.customerId.lang].receiveorder(order.orderNumber),
             {
               reply_markup: {
                 inline_keyboard: [
                   [
-                    { text: 'Ha', callback_data: `yes_${order._id}` },
-                    { text: "Yo'q", callback_data: `no_${order._id}` },
+                    {
+                      text: languages[order.customerId.lang].yes,
+                      callback_data: `yes_${order._id}`,
+                    },
+                    { text: languages[order.customerId.lang].no, callback_data: `no_${order._id}` },
                   ],
                 ],
               },
@@ -111,7 +115,9 @@ async function checkAndUpdateStatus() {
           await Order.findByIdAndUpdate(order._id, { status: 'unsubmitted' })
 
           if (order.userId.telegramId) {
-            let my_text = `\`${order.orderNumber}\` raqamli zakaz tayyor bo'lish sanasidan o'tib ketdi.`
+            let my_text = `${languages['uz'].pastduedate(order.orderNumber)}%0A%0A${languages[
+              'ru'
+            ].pastduedate(order.orderNumber)}`
             await axios.post(
               `https://api.telegram.org/bot${order.userId.telegramToken}/sendMessage?chat_id=${order.userId.telegramId}&text=${my_text}&parse_mode=markdown`
             )

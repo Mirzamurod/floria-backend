@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator'
 import axios from 'axios'
 import orderModel from '../models/orderModel.js'
 import { bots } from '../telegramBot.js'
+import languages from '../languages/index.js'
 
 const order = {
   /**
@@ -110,18 +111,20 @@ const order = {
       const telegramId = req.user.telegramId
       const location = req.user.location
       const { status, payment } = req.body
-      const web_app = {
-        reply_markup: {
-          keyboard: [
-            [
-              {
-                text: "Buketlarni ko'rish",
-                web_app: { url: `${process.env.FRONT_URL}${req.user._id}` },
-              },
+      const web_app = lang => {
+        return {
+          reply_markup: {
+            keyboard: [
+              [
+                {
+                  text: languages[lang].seebouquets,
+                  web_app: { url: `${process.env.FRONT_URL}${req.user._id}` },
+                },
+              ],
             ],
-          ],
-          resize_keyboard: true,
-        },
+            resize_keyboard: true,
+          },
+        }
       }
       const updatedOrder = await orderModel
         .findByIdAndUpdate(
@@ -131,14 +134,16 @@ const order = {
         )
         .populate('customerId')
 
+      const lang = updatedOrder.customerId.lang
+
       // check telegram token
       if (telegramToken) {
         if (status) {
           await bots[telegramToken].sendMessage(
             updatedOrder.customerId.chatId,
-            `Sizning #No${updatedOrder.orderNumber} raqamli zakazingiz ${
-              status === 'cancelled' ? 'bekor' : 'tayyor'
-            } bo'ldi.`
+            status === 'cancelled'
+              ? languages[lang].ordercancelled(updatedOrder.orderNumber)
+              : languages[lang].orderdone(updatedOrder.orderNumber)
           )
           // check delivery and location
           if (updatedOrder.delivery === 'takeaway') {
@@ -146,7 +151,7 @@ const order = {
             if (long_lat.length === 2) {
               await bots[telegramToken].sendMessage(
                 updatedOrder.customerId.chatId,
-                location ? 'Zakazingizni pastdagi lokatsiyadan olib ketishingiz mumkin.' : ''
+                location ? languages[lang].pickuporder : ''
               )
               await bots[telegramToken].sendLocation(
                 updatedOrder.customerId.chatId,
@@ -156,40 +161,38 @@ const order = {
             } else {
               await bots[telegramToken].sendMessage(
                 updatedOrder.customerId.chatId,
-                location
-                  ? `Zakazingizni <a href='${location}'>shu yerdan</a> olib ketishingiz mumkin.`
-                  : '',
+                location ? languages[lang].location(location) : '',
                 { parse_mode: 'HTML' }
               )
             }
 
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-              web_app
+              languages[lang].seebouquetsmore,
+              web_app(lang)
             )
           } else {
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              'Tez orada manzilingizga yetkazib beriladi'
+              languages[lang].deliveredsoon
             )
 
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin"
+              languages[lang].seebouquetsmore
             )
           }
         } else {
           if (payment === 'accepted') {
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilindi.\nZakazingiz tayyor bo'lishi bilan sizga xabar beramiz.`
+              languages[lang].successpayment(updatedOrder.orderNumber)
             )
 
             await bots[telegramToken].sendMessage(
               updatedOrder.customerId.chatId,
-              "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-              web_app
+              languages[lang].seebouquetsmore,
+              web_app(lang)
             )
           } else if (payment === 'cancelled') {
             if (updatedOrder.prepaymentNumber >= 2) {
@@ -197,11 +200,13 @@ const order = {
 
               await bots[telegramToken].sendMessage(
                 updatedOrder.customerId.chatId,
-                `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan ikkinchi marta to'lovingiz qabul qilinmadi va zakazingiz bekor qilindi.`
+                languages[lang].cancelledpayment2(updatedOrder.orderNumber)
               )
 
               if (telegramId) {
-                let my_text = `\`${updatedOrder.orderNumber}\` raqamli zakaz bekor qilindi.`
+                let my_text = `${languages['uz'].cancelledorder(
+                  updatedOrder.orderNumber
+                )}%0A%0A${languages['uz'].cancelledorder(updatedOrder.orderNumber)}`
                 await axios.post(
                   `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
                 )
@@ -209,12 +214,12 @@ const order = {
             } else {
               await bots[telegramToken].sendMessage(
                 updatedOrder.customerId.chatId,
-                `Sizning #No${updatedOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
+                languages[lang].cancelledpayment(updatedOrder.orderNumber)
               )
 
               await bots[telegramToken].sendMessage(
                 updatedOrder.customerId.chatId,
-                "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
+                languages[lang].warningpayment,
                 { reply_markup: { remove_keyboard: true } }
               )
             }

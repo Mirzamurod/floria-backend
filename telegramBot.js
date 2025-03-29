@@ -3,6 +3,7 @@ import axios from 'axios'
 import User from './models/userModel.js'
 import Customer from './models/customerModel.js'
 import Order from './models/orderModel.js'
+import languages from './languages/index.js'
 
 export const bots = {} // Xotirada botlarni saqlash
 
@@ -24,23 +25,33 @@ const createBot = async (telegramToken, user) => {
     { command: '/deleteorder', description: 'Zakazni bekor qilish' },
     { command: '/userinfo', description: "Bot egasi haqida ma'lumot" },
     { command: '/cardinfo', description: "Karta haqida ma'lumot" },
+    { command: '/languages', description: "Tilni o'zgartirish" },
   ])
 
-  const web_app = {
-    reply_markup: {
-      keyboard: [
-        [{ text: "Buketlarni ko'rish", web_app: { url: `${process.env.FRONT_URL}${user._id}` } }],
-      ],
-      resize_keyboard: true,
-    },
+  const web_app = lang => {
+    return {
+      reply_markup: {
+        keyboard: [
+          [
+            {
+              text: languages[lang].seebouquets,
+              web_app: { url: `${process.env.FRONT_URL}${user._id}` },
+            },
+          ],
+        ],
+        resize_keyboard: true,
+      },
+    }
   }
 
-  const locationKeyboard = {
-    reply_markup: {
-      keyboard: [[{ text: '📍 Manzilingizni yuborish', request_location: true }]],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    },
+  const locationKeyboard = lang => {
+    return {
+      reply_markup: {
+        keyboard: [[{ text: languages[lang].sendlocation, request_location: true }]],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      },
+    }
   }
 
   const imageKeyboard = {
@@ -59,9 +70,11 @@ const createBot = async (telegramToken, user) => {
     const customer = await Customer.findOne({ chatId })
     const photoArray = msg.photo
     const getLocation = msg.location
+    const lang = msg.from.language_code === 'ru' ? 'ru' : 'uz'
 
     if (text === '/start') {
-      await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
+      // await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
+      await bot.sendMessage(chatId, languages[lang].platform(botName.first_name))
 
       if (customer?.phone) {
         const repaymentOrder = await Order.findOne({
@@ -74,32 +87,19 @@ const createBot = async (telegramToken, user) => {
         if (repaymentOrder) {
           await bot.sendMessage(
             chatId,
-            `Sizning #No${repaymentOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
+            languages[lang].cancelledpayment(repaymentOrder.orderNumber)
           )
 
-          await bot.sendMessage(
-            chatId,
-            "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
-            imageKeyboard
-          )
-        } else
-          await bot.sendMessage(
-            chatId,
-            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-            web_app
-          )
+          await bot.sendMessage(chatId, languages[lang].warningpayment, imageKeyboard)
+        } else await bot.sendMessage(chatId, languages[lang].seebouquetsmore, web_app(lang))
       } else {
-        await bot.sendMessage(
-          chatId,
-          'Buket zakat qilishdan oldin telefon raqamingizni jo‘nating:',
-          {
-            reply_markup: {
-              keyboard: [[{ text: "📲 Kontaktni jo'natish", request_contact: true }]],
-              one_time_keyboard: true,
-              resize_keyboard: true,
-            },
-          }
-        )
+        await bot.sendMessage(chatId, languages[lang].askPhone, {
+          reply_markup: {
+            keyboard: [[{ text: languages[lang].sendContact, request_contact: true }]],
+            one_time_keyboard: true,
+            resize_keyboard: true,
+          },
+        })
       }
     }
 
@@ -113,25 +113,23 @@ const createBot = async (telegramToken, user) => {
               ...orders.map(item => [
                 { text: `💐 No${item.orderNumber}`, callback_data: item._id },
               ]),
-              [{ text: 'Hech qaysi', callback_data: 'not_delete_order' }],
+              [{ text: languages[lang].none, callback_data: 'not_delete_order' }],
             ],
           },
         }
-        await bot.sendMessage(chatId, 'Qaysi zakazni bekor qilmoqchisiz?', inlineKeyboard)
+        await bot.sendMessage(chatId, languages[lang].whichorder, inlineKeyboard)
       } else {
-        await bot.sendMessage(chatId, 'Hech qanday zakaz topilmadi.')
+        await bot.sendMessage(chatId, languages[lang].noorders)
       }
     }
 
     if (text === '/userinfo')
-      await bot.sendMessage(chatId, `Ismi: ${userName}\nTelefon raqami: ${userPhone}`)
+      await bot.sendMessage(chatId, languages[lang].namephone(userName, userPhone))
 
     if (text === '/cardinfo')
-      await bot.sendMessage(
-        chatId,
-        `Karta raqami: \`${card_number}\`\nKarta egasining ismi: ${card_name}`,
-        { parse_mode: 'Markdown' }
-      )
+      await bot.sendMessage(chatId, languages[lang].cardnumber(card_number, card_name), {
+        parse_mode: 'Markdown',
+      })
 
     if (msg.photo) {
       const repaymentOrder = await Order.findOne({
@@ -153,24 +151,20 @@ const createBot = async (telegramToken, user) => {
             { new: true }
           )
 
-          await bot.sendMessage(
-            chatId,
-            "Rasm adminga jo'natildi. Tez orada sizga xabar beramiz.",
-            imageKeyboard
-          )
+          await bot.sendMessage(chatId, languages[lang].sentpicture, imageKeyboard)
 
           if (repaymentOrder && telegramId) {
-            let my_text = `\`${repaymentOrder.orderNumber}\` qayta to'lov qildi: [zakazni ko'rish](${process.env.FRONT_URL}view/${repaymentOrder._id})`
-            await axios.post(
-              // `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
-              `https://api.telegram.org/bot${telegramToken}/sendPhoto`,
-              {
-                chat_id: telegramId,
-                photo: photoArray[2].file_id,
-                caption: my_text,
-                parse_mode: 'Markdown',
-              }
-            )
+            let my_text = `${languages['uz'].repayment(repaymentOrder.orderNumber)}(${
+              process.env.FRONT_URL
+            }view/${repaymentOrder._id})%0A%0A${languages['ru'].repayment(
+              repaymentOrder.orderNumber
+            )}(${process.env.FRONT_URL}view/${repaymentOrder._id})`
+            await axios.post(`https://api.telegram.org/bot${telegramToken}/sendPhoto`, {
+              chat_id: telegramId,
+              photo: photoArray[2].file_id,
+              caption: my_text,
+              parse_mode: 'Markdown',
+            })
           }
         }
       } else {
@@ -192,26 +186,18 @@ const createBot = async (telegramToken, user) => {
             { new: true }
           )
 
-          await bot.sendMessage(chatId, "Rasm adminga jo'natildi. Tez orada sizga xabar beramiz.")
+          await bot.sendMessage(chatId, languages[lang].sentpicture)
 
-          await bot.sendMessage(
-            chatId,
-            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-            web_app
-          )
+          await bot.sendMessage(chatId, languages[lang].seebouquetsmore, web_app(lang))
 
           if (existOrder && telegramId) {
-            let my_text = `Yangi zakaz: [zakazni ko'rish](${process.env.FRONT_URL}view/${existOrder._id})`
-            await axios.post(
-              // `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
-              `https://api.telegram.org/bot${telegramToken}/sendPhoto`,
-              {
-                chat_id: telegramId,
-                photo: photoArray[2].file_id,
-                caption: my_text,
-                parse_mode: 'Markdown',
-              }
-            )
+            let my_text = `${languages['uz'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})%0A%0A${languages['ru'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})`
+            await axios.post(`https://api.telegram.org/bot${telegramToken}/sendPhoto`, {
+              chat_id: telegramId,
+              photo: photoArray[2].file_id,
+              caption: my_text,
+              parse_mode: 'Markdown',
+            })
           }
         }
       }
@@ -228,8 +214,8 @@ const createBot = async (telegramToken, user) => {
 
       await bot.sendMessage(
         msg.chat.id,
-        `✅ Raqamingiz qabul qilindi: ${msg.contact.first_name}. Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin`,
-        web_app
+        languages[lang].acceptedphone(msg.contact.first_name),
+        web_app(lang)
       )
     }
 
@@ -260,10 +246,7 @@ const createBot = async (telegramToken, user) => {
             { path: 'customerId', model: 'Customer' },
           ])
 
-          await bot.sendMessage(
-            chatId,
-            `#No${getOrder.orderNumber} raqamli zakazingiz qabul qilindi.\nSiz zakaz bergan buketlar ro'yxati:`
-          )
+          await bot.sendMessage(chatId, languages[lang].listorders(getOrder.orderNumber))
 
           if (getOrder?.bouquet?.bouquets?.length) {
             for (const item of getOrder?.bouquet?.bouquets) {
@@ -281,48 +264,41 @@ const createBot = async (telegramToken, user) => {
               sum += +item.price
             }
 
-            await bot.sendMessage(chatId, `Maxsus buket:\n${data.join('')}\nNarxi: ${getSum(sum)}`)
+            await bot.sendMessage(
+              chatId,
+              `${languages[lang].custombouquet}:\n${data.join('')}\n${
+                languages[lang].price
+              }: ${getSum(sum)}`
+            )
           }
 
           await bot.sendMessage(
             chatId,
-            `**Buketlar umumiy soni**:  ${
+            `**${languages[lang].totalbouquets}**:  ${
               getOrder?.bouquet?.qty + getOrder?.flower?.qty
-            } ta\n**Buketlar umumiy narxi**: ${getSum(
+            } ta\n**${languages[lang].totalprice}**: ${getSum(
               getOrder?.bouquet.price + getOrder?.flower?.price
             )}`,
             { parse_mode: 'Markdown' }
           )
 
           if (getOrder?.delivery === 'delivery') {
-            await bot.sendMessage(
-              chatId,
-              'Buketlarni yetkazib berish uchun manzilingizni yuboring.',
-              locationKeyboard
-            )
+            await bot.sendMessage(chatId, languages[lang].sendaddress, locationKeyboard)
           } else if (getOrder?.delivery === 'takeaway') {
             if (getOrder.prepayment)
-              await bot.sendMessage(
-                chatId,
-                `Pastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\n\`${card_number}\`\n${card_name}`,
-                { ...imageKeyboard, parse_mode: 'Markdown' }
-              )
+              await bot.sendMessage(chatId, languages[lang].payment(card_number, card_name), {
+                ...imageKeyboard,
+                parse_mode: 'Markdown',
+              })
             else {
-              await bot.sendMessage(
-                chatId,
-                "Zakazingiz qabul qilindi. Tayyor bo'lishi bilan sizga xabar beramiz"
-              )
+              await bot.sendMessage(chatId, languages[lang].acceptedorder)
 
-              await bot.sendMessage(
-                chatId,
-                "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-                web_app
-              )
+              await bot.sendMessage(chatId, languages[lang].seebouquetsmore, web_app(lang))
 
               if (getOrder && telegramId) {
-                let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${getOrder._id}'>zakazni ko'rish</a>`
+                let my_text = `${languages['uz'].neworder}(${process.env.FRONT_URL}view/${getOrder._id})%0A%0A${languages['ru'].neworder}(${process.env.FRONT_URL}view/${getOrder._id})`
                 await axios.post(
-                  `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
+                  `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
                 )
               }
             }
@@ -346,25 +322,18 @@ const createBot = async (telegramToken, user) => {
         if (existOrder.prepayment) {
           await bot.sendMessage(
             chatId,
-            `Manzilingiz qabul qilindi.\n\nPastdagi karta raqamiga to'lov qilishingiz va rasmini bizga yuborishingiz kerak, biz to'lovni tekshirib sizga xabar beramiz.\n\n\`${card_number}\`\n${card_name}`,
+            languages[lang].acceptedlocationsendpayment(card_number, card_name),
             { ...imageKeyboard, parse_mode: 'Markdown' }
           )
         } else {
-          await bot.sendMessage(
-            chatId,
-            "Manzilingiz qabul qilindi. Buket tayyor bo'lishi bilan manzilingizga yetkazib beramiz."
-          )
+          await bot.sendMessage(chatId, languages[lang].acceptedlocation)
 
-          await bot.sendMessage(
-            chatId,
-            "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-            web_app
-          )
+          await bot.sendMessage(chatId, languages[lang].seebouquetsmore, web_app(lang))
 
           if (existOrder && telegramId) {
-            let my_text = `Yangi zakaz: <a href='${process.env.FRONT_URL}view/${existOrder._id}'>zakazni ko'rish</a>`
+            let my_text = `${languages['uz'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})%0A%0A${languages['ru'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})`
             await axios.post(
-              `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=html`
+              `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
             )
           }
         }
@@ -378,17 +347,14 @@ const createBot = async (telegramToken, user) => {
     const selectedOrder = query.data
     const customer = await Customer.findOne({ chatId })
     const messageId = query.message.message_id
+    const lang = query.from.language_code === 'ru' ? 'ru' : 'uz'
 
     if (selectedOrder.split('_')[0] === 'yes') {
-      await bot.sendMessage(chatId, 'Javobingiz uchun rahmat.')
+      await bot.sendMessage(chatId, languages[lang].thanks)
 
       await bot.deleteMessage(chatId, messageId)
 
-      await bot.sendMessage(
-        chatId,
-        "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-        web_app
-      )
+      await bot.sendMessage(chatId, languages[lang].seebouquetsmore, web_app(lang))
 
       const updatedOrder = await Order.findByIdAndUpdate(
         selectedOrder.split('_')[1],
@@ -397,16 +363,15 @@ const createBot = async (telegramToken, user) => {
       )
 
       if (updatedOrder && telegramId) {
-        let my_text = `Klient \`${updatedOrder.orderNumber}\` raqamli zakazni qabul qildi.`
+        let my_text = `${languages['uz'].acceptedclientorder(
+          updatedOrder.orderNumber
+        )}%0A%0A${languages['ru'].acceptedclientorder(updatedOrder.orderNumber)}`
         await axios.post(
           `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
         )
       }
     } else if (selectedOrder.split('_')[0] === 'no') {
-      await bot.sendMessage(
-        chatId,
-        `Sotuvchiga telefon qilib gaplashing, nega buketingiz tayyor bo'lmaganligi haqida.\n\nIsmi: ${userName}\nTelefon raqami: ${userPhone}`
-      )
+      await bot.sendMessage(chatId, languages[lang].askseller(userName, userPhone))
     } else {
       if (selectedOrder !== 'not_delete_order') {
         const deletedOrder = await Order.findByIdAndUpdate(
@@ -415,13 +380,12 @@ const createBot = async (telegramToken, user) => {
           { new: true }
         )
 
-        await bot.sendMessage(
-          chatId,
-          `No${deletedOrder.orderNumber} raqamli zakazingiz bekor qilindi.`
-        )
+        await bot.sendMessage(chatId, languages[lang].ordercancelled(deletedOrder.orderNumber))
 
         if (deletedOrder && telegramId) {
-          let my_text = `\`${deletedOrder.orderNumber}\` raqamli zakaz bekor qilindi.`
+          let my_text = `${languages['uz'].cancelledorder(
+            deletedOrder.orderNumber
+          )}%0A%0A${languages['ru'].cancelledorder(deletedOrder.orderNumber)}`
           await axios.post(
             `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramId}&text=${my_text}&parse_mode=markdown`
           )
@@ -434,9 +398,9 @@ const createBot = async (telegramToken, user) => {
             {
               inline_keyboard: [
                 ...orders.map(item => [
-                  { text: `💐 No${item.orderNumber}`, callback_data: item._id },
+                  { text: `💐 #No${item.orderNumber}`, callback_data: item._id },
                 ]),
-                [{ text: 'Hech qaysi', callback_data: 'not_delete_order' }],
+                [{ text: languages[lang].none, callback_data: 'not_delete_order' }],
               ],
             },
             { chat_id: chatId, message_id: messageId }
@@ -452,22 +416,10 @@ const createBot = async (telegramToken, user) => {
       }).sort({ createdAt: -1 })
 
       if (repaymentOrder) {
-        await bot.sendMessage(
-          chatId,
-          `Sizning #No${repaymentOrder.orderNumber} raqamli zakazingizga qilgan to'lovingiz qabul qilinmadi`
-        )
+        await bot.sendMessage(chatId, languages[lang].cancelledpayment(repaymentOrder.orderNumber))
 
-        await bot.sendMessage(
-          chatId,
-          "To'g'ri to'lov rasmini tashlang yoki zakazingizni bekor qiling.\n\nAgar zakazingizni bekor qilmoqchi bo'lsangiz Menuni bosib \"Zakazni bekor qilish\" ni tanlab zakazingizni bekor qiling.",
-          imageKeyboard
-        )
-      } else
-        await bot.sendMessage(
-          chatId,
-          "Buketlarni ko'rish knopkasini bosib, buket va gullarni ko'rishingiz mumkin",
-          web_app
-        )
+        await bot.sendMessage(chatId, languages[lang].warningpayment, imageKeyboard)
+      } else await bot.sendMessage(chatId, languages[lang].seebouquetsmore, web_app(lang))
     }
   })
 
