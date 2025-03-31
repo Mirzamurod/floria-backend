@@ -5,7 +5,7 @@ const customerSchema = new Schema(
     name: { type: String },
     phone: { type: String, require: true },
     chatId: { type: String, require: true },
-    lang: { type: String, enum: ['uz', 'ru'], default: 'uz' },
+    lang: { type: String, enum: ['uz', 'ru'] },
     userId: { type: Schema.Types.ObjectId, ref: 'User', require: true },
   },
   { timestamps: true }
