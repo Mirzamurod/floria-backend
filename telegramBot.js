@@ -73,7 +73,7 @@ const createBot = async (telegramToken, user) => {
     const customer = await Customer.findOne({ chatId })
     const photoArray = msg.photo
     const getLocation = msg.location
-    const lang = customer.lang ? customer.lang : msg.from.language_code === 'ru' ? 'ru' : 'uz'
+    const lang = customer?.lang ? customer?.lang : msg?.from?.language_code === 'ru' ? 'ru' : 'uz'
 
     if (text === '/start') {
       // await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
