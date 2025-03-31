@@ -21,11 +21,14 @@ const createBot = async (telegramToken, user) => {
   const { telegramId, card_name, card_number, userName, userPhone } = user
 
   bot.setMyCommands([
-    { command: '/start', description: "Buketlar ko'rish" },
-    { command: '/deleteorder', description: 'Zakazni bekor qilish' },
-    { command: '/userinfo', description: "Bot egasi haqida ma'lumot" },
-    { command: '/cardinfo', description: "Karta haqida ma'lumot" },
-    { command: '/languages', description: "Tilni o'zgartirish" },
+    {
+      command: '/start',
+      description: `${languages['uz'].seebouquets}\n${languages['ru'].seebouquets}`,
+    },
+    { command: '/deleteorder', description: 'Zakazni bekor qilish\nОтмена заказа' },
+    { command: '/userinfo', description: "Bot egasi haqida ma'lumot\nИнформация о владельце бота" },
+    { command: '/cardinfo', description: "Karta haqida ma'lumot\nИнформация о карте" },
+    { command: '/changelanguage', description: "Tilni o'zgartirish\nИзменить язык" },
   ])
 
   const web_app = lang => {
@@ -70,7 +73,7 @@ const createBot = async (telegramToken, user) => {
     const customer = await Customer.findOne({ chatId })
     const photoArray = msg.photo
     const getLocation = msg.location
-    const lang = msg.from.language_code === 'ru' ? 'ru' : 'uz'
+    const lang = customer.lang ? customer.lang : msg.from.language_code === 'ru' ? 'ru' : 'uz'
 
     if (text === '/start') {
       // await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
@@ -129,6 +132,18 @@ const createBot = async (telegramToken, user) => {
     if (text === '/cardinfo')
       await bot.sendMessage(chatId, languages[lang].cardnumber(card_number, card_name), {
         parse_mode: 'Markdown',
+      })
+
+    if (text === '/changelanguage')
+      await bot.sendMessage(chatId, languages[lang].changelang, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: '🇺🇿 Uz', callback_data: `uz` },
+              { text: '🇷🇺 Ru', callback_data: `ru` },
+            ],
+          ],
+        },
       })
 
     if (msg.photo) {
@@ -347,9 +362,22 @@ const createBot = async (telegramToken, user) => {
     const selectedOrder = query.data
     const customer = await Customer.findOne({ chatId })
     const messageId = query.message.message_id
-    const lang = query.from.language_code === 'ru' ? 'ru' : 'uz'
+    const lang = customer.lang ? customer.lang : query.from.language_code === 'ru' ? 'ru' : 'uz'
 
-    if (selectedOrder.split('_')[0] === 'yes') {
+    if (selectedOrder === 'uz' || selectedOrder === 'ru') {
+      await Customer.findByIdAndUpdate(customer._id, { lang: selectedOrder })
+
+      await bot.deleteMessage(chatId, messageId)
+
+      await bot.sendMessage(
+        chatId,
+        `Siz ${
+          selectedOrder === 'uz' ? "o'zbek" : 'rus'
+        } tilini tanladingiz, /start ni bosib hamma joydan tilni o'zgartiring.\n\nВы выбрали ${
+          selectedOrder === 'uz' ? 'узбекский' : 'русский'
+        } язык, измените язык где угодно, нажав /start.`
+      )
+    } else if (selectedOrder.split('_')[0] === 'yes') {
       await bot.sendMessage(chatId, languages[lang].thanks)
 
       await bot.deleteMessage(chatId, messageId)

@@ -60,6 +60,7 @@ const ru = {
   askseller: (userName, userPhone) =>
     `Позвоните продавцу и уточните, почему ваш букет еще не готов.\n\nИмя: ${userName}\nТелефон: ${userPhone}`,
   acceptedclientorder: orderNumber => `Клиент принял заказ с номером \`${orderNumber}\`.`,
+  changelang: 'Выберите язык',
 }
 
 export default ru

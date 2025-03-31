@@ -64,6 +64,7 @@ const uz = {
   askseller: (userName, userPhone) =>
     `Sotuvchiga telefon qilib gaplashing, nega buketingiz tayyor bo'lmaganligi haqida.\n\nIsmi: ${userName}\nTelefon raqami: ${userPhone}`,
   acceptedclientorder: orderNumber => `Mijoz \`${orderNumber}\` raqamli zakazni qabul qildi.`,
+  changelang: 'Tilni tanlang',
 }
 
 export default uz

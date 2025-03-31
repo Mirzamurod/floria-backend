@@ -261,7 +261,8 @@ const order = {
       if (telegramToken && order.status === 'unsubmitted') {
         await bots[telegramToken].sendMessage(
           order.customerId.chatId,
-          `Sotuvchi sizdan #No${order.orderNumber} raqamli zakazingizni oldingizmi deb so'rayapti?`,
+          // `Sotuvchi sizdan #No${order.orderNumber} raqamli zakazingizni oldingizmi deb so'rayapti?`,
+          languages[order.customerId.lang].asknumber,
           {
             reply_markup: {
               inline_keyboard: [
