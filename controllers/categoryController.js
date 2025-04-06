@@ -13,7 +13,10 @@ const category = {
 
     const filter = { userId: req.user._id }
 
-    if (search) filter.name = { $regex: search ?? '', $options: 'i' }
+    if (search) {
+      filter.nameUz = { $regex: search ?? '', $options: 'i' }
+      filter.nameRu = { $regex: search ?? '', $options: 'i' }
+    }
 
     try {
       const totalCount = await categoryModel.countDocuments(filter)
