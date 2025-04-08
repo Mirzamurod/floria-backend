@@ -9,5 +9,6 @@ router.route('/clients').get(protect, admin, user.getClientsByAdmin)
 router.patch('/clients/edit/:id', protect, admin, user.editClientByAdmin)
 router.patch('/clients/telegram', protect, client, user.editTelegramKey)
 router.get('/users/public/:id', user.getUser)
+router.patch('/clients/payment/:id', user.paymentUser)
 
 export default router

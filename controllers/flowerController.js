@@ -83,7 +83,7 @@ const flower = {
       const flowerId = req.params.id
       const flower = await flowerModel.findOne({ userId: req.user._id, _id: flowerId })
       if (flower) res.status(200).json({ data: flower })
-      else res.status(400).json({ success: false, message: 'Gul topilmadi' })
+      else res.status(400).json({ success: false, message: 'notfoundflower' })
     } catch (error) {
       res.status(200).json({ success: false, message: error.message })
     }
@@ -120,7 +120,7 @@ const flower = {
               userId,
               image: `${process.env.IMAGE_URL}600${imageName}`,
             })
-            res.status(201).json({ success: true, message: "Gul qo'shildi" })
+            res.status(201).json({ success: true, message: 'addedflower' })
           }
         }
       }
@@ -170,12 +170,12 @@ const flower = {
             if (existsSync(image)) unlinkSync(image)
             else console.log('❌ Fayl topilmadi:', image)
 
-            res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
+            res.status(200).json({ success: true, message: 'editedflower' })
           }
         }
       } else {
         await flowerModel.findByIdAndUpdate(flowerId, req.body)
-        res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
+        res.status(200).json({ success: true, message: 'editedflower' })
       }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -191,7 +191,7 @@ const flower = {
     try {
       const flowerId = req.params.id
       await flowerModel.findByIdAndUpdate(flowerId, req.body)
-      res.status(200).json({ success: true, message: "Gul o'zgartirildi" })
+      res.status(200).json({ success: true, message: 'editedflower' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -212,7 +212,7 @@ const flower = {
       if (existsSync(image)) unlinkSync(image)
       else console.log('❌ Fayl topilmadi:', image)
 
-      res.status(200).json({ success: true, message: "Gul o'zgatirildi" })
+      res.status(200).json({ success: true, message: 'deletedflower' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }

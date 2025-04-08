@@ -82,7 +82,7 @@ const category = {
     try {
       const userId = req.user._id
       await categoryModel.create({ ...req.body, userId })
-      res.status(201).json({ success: true, message: "Kategoriya qo'shildi" })
+      res.status(201).json({ success: true, message: 'addedcategory' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -98,7 +98,7 @@ const category = {
       const categoryId = req.params.id
       const category = await categoryModel.findById(categoryId)
       if (category) res.status(200).json({ data: category })
-      else res.status(400).json({ success: false, message: 'Kategoriya topilmadi' })
+      else res.status(400).json({ success: false, message: 'notfoundcategory' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -118,7 +118,7 @@ const category = {
     try {
       const categoryId = req.params.id
       await categoryModel.findByIdAndUpdate(categoryId, req.body)
-      res.status(200).json({ success: true, message: "Kategoriya o'zgartirildi" })
+      res.status(200).json({ success: true, message: 'editedcategory' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -133,7 +133,7 @@ const category = {
     try {
       const categoryId = req.params.id
       await categoryModel.findByIdAndUpdate(categoryId, req.body)
-      res.status(200).json({ success: true, message: "Kategoriya o'zgartirildi" })
+      res.status(200).json({ success: true, message: 'editedcategory' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -148,7 +148,7 @@ const category = {
     try {
       const categoryId = req.params.id
       await categoryModel.findByIdAndDelete(categoryId)
-      res.status(200).json({ success: true, message: "Kategoriya o'chirildi" })
+      res.status(200).json({ success: true, message: 'deletedcategory' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }

@@ -67,7 +67,7 @@ const order = {
       } while (existOrder)
 
       await orderModel.create({ ...req.body, userId, orderNumber })
-      res.status(201).json({ success: true, message: "Zakaz qo'shildi" })
+      res.status(201).json({ success: true, message: 'addedorder' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -88,7 +88,7 @@ const order = {
         // { path: 'userId', model: 'User' },
       ])
       if (order) res.status(200).json({ data: order })
-      else res.status(400).json({ success: false, message: 'Zakaz topilmadi' })
+      else res.status(400).json({ success: false, message: 'notfoundorder' })
     } catch (error) {
       res.status(200).json({ success: false, message: error.message })
     }
@@ -226,7 +226,7 @@ const order = {
           }
         }
       }
-      res.status(200).json({ success: true, message: "Zakaz o'zgartirildi" })
+      res.status(200).json({ success: true, message: 'editedorder' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -241,7 +241,7 @@ const order = {
     try {
       const orderId = req.params.id
       await orderModel.findByIdAndDelete(orderId)
-      res.status(200).json({ success: true, message: "Zakaz o'chirildi" })
+      res.status(200).json({ success: true, message: 'deletedorder' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -275,12 +275,11 @@ const order = {
           }
         )
 
-        res.status(200).json({ success: true, message: 'Klientga habar yuborildi.' })
+        res.status(200).json({ success: true, message: 'sentmessage' })
       } else {
         res.status(200).json({
           success: true,
-          message:
-            "Zakaz 'Topshirilmagan zakazlar' bo'limida emas, 'Eski zakazlar' yoki 'Bekor bo'lganlar' bo'limidan qarab ko'ring",
+          message: 'notfoununsubmittedorder',
         })
       }
     } catch (error) {

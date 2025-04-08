@@ -88,7 +88,7 @@ const bouquet = {
       const bouquetId = req.params.id
       const bouquet = await bouquetModel.findOne({ userId: req.user._id, _id: bouquetId })
       if (bouquet) res.status(200).json({ data: bouquet })
-      else res.status(400).json({ success: false, message: 'Buket topilmadi' })
+      else res.status(400).json({ success: false, message: 'notfoundbouquet' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -125,7 +125,7 @@ const bouquet = {
               userId,
               image: `${process.env.IMAGE_URL}600${imageName}`,
             })
-            res.status(201).json({ success: true, message: "Buket qo'shildi" })
+            res.status(201).json({ success: true, message: 'addedbouquet' })
           }
         }
       }
@@ -176,12 +176,12 @@ const bouquet = {
             if (existsSync(image)) unlinkSync(image)
             else console.log('❌ Fayl topilmadi:', image)
 
-            res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+            res.status(200).json({ success: true, message: 'editedbouquet' })
           }
         }
       } else {
         await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
-        res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+        res.status(200).json({ success: true, message: 'editedbouquet' })
       }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -197,7 +197,7 @@ const bouquet = {
     try {
       const bouquetId = req.params.id
       await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
-      res.status(200).json({ success: true, message: "Buket o'zgartirildi" })
+      res.status(200).json({ success: true, message: 'editedbouquet' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -218,7 +218,7 @@ const bouquet = {
       if (existsSync(image)) unlinkSync(image)
       else console.log('❌ Fayl topilmadi:', image)
 
-      res.status(200).json({ success: true, message: "Buket o'chirildi" })
+      res.status(200).json({ success: true, message: 'deletedbouquet' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }

@@ -1,4 +1,5 @@
 import expressAsyncHandler from 'express-async-handler'
+import { addMonths } from 'date-fns'
 import userModel from './../models/userModel.js'
 
 const user = {
@@ -10,8 +11,8 @@ const user = {
   delete: expressAsyncHandler(async (req, res) => {
     if (req.user) {
       await userModel.findByIdAndDelete(req.user.id)
-      res.status(200).json({ success: true, message: "Foydalanuvchi o'chirildi" })
-    } else res.status(400).json({ success: false, message: 'Foydalanuvchi topilmadi' })
+      res.status(200).json({ success: true, message: 'deletedclient' })
+    } else res.status(400).json({ success: false, message: 'notfoundclient' })
   }),
 
   /**
@@ -62,7 +63,7 @@ const user = {
         date,
         ...(plan ? { block: false } : {}),
       })
-      res.status(200).json({ success: true, message: 'User updated' })
+      res.status(200).json({ success: true, message: 'updateduser' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -88,7 +89,7 @@ const user = {
         userPhone,
       })
 
-      res.status(200).json({ success: true, message: "Foydalanuvchi o'zgartirildi" })
+      res.status(200).json({ success: true, message: 'updateduser' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
@@ -109,7 +110,24 @@ const user = {
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
     }
-    const user = await userModel.findById()
+  }),
+
+  /**
+   * @desc    Edit User by Admin
+   * @route   PATCH /api/client/payment/:id
+   * @access  Private
+   */
+  paymentUser: expressAsyncHandler(async (req, res) => {
+    const userId = req.params.id
+    const date = req.body.date
+
+    try {
+      await userModel.findByIdAndUpdate(userId, { date: addMonths(date, 1), plan: 'month' })
+
+      res.status(200).json({ success: true, message: 'userupdated' })
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message })
+    }
   }),
 }
 
