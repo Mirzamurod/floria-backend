@@ -298,7 +298,7 @@ const createBot = async (telegramToken, user) => {
           )
 
           if (getOrder?.delivery === 'delivery') {
-            await bot.sendMessage(chatId, languages[lang].sendaddress, locationKeyboard)
+            await bot.sendMessage(chatId, languages[lang].sendaddress, locationKeyboard(lang))
           } else if (getOrder?.delivery === 'takeaway') {
             if (getOrder.prepayment)
               await bot.sendMessage(chatId, languages[lang].payment(card_number, card_name), {
