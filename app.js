@@ -31,7 +31,7 @@ app.use(cookieParser())
 
 // `__dirname` ni qayta yaratish
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = join(__filename, '..')
+const __dirname = path.dirname(__filename)
 
 // Rasmlar saqlanadigan papka
 const imagesDir = join(__dirname, 'images')

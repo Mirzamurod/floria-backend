@@ -2,9 +2,14 @@ import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
 import path from 'path'
 import sharp from 'sharp'
+import { fileURLToPath } from 'url'
 import { existsSync, unlinkSync } from 'fs'
 import bouquetModel from './../models/bouquetModel.js'
 import userModel from '../models/userModel.js'
+
+// __dirname ni yaratish
+// const __filename = fileURLToPath(import.meta.url)
+// const __dirname = path.dirname(__filename)
 
 const bouquet = {
   /**
@@ -112,12 +117,12 @@ const bouquet = {
 
         if (allowedExtensions.includes(fileExtension)) {
           const imageName = Date.now() + path.extname(req.file.originalname)
-          const imagePath = path.join(__dirname, 'images', '600' + imageName)
+          // const imagePath = path.join(__dirname, 'images', '600' + imageName)
           const image600 = await sharp(req.file.buffer)
             .resize({ width: 540, height: 600 })
             // .toFormat('png')
-            // .toFile('./images/' + 600 + imageName)
-            .toFile(imagePath)
+            .toFile('./images/' + 600 + imageName)
+          // .toFile(imagePath)
 
           if (image600) {
             const userId = req.user._id
@@ -156,12 +161,12 @@ const bouquet = {
 
         if (allowedExtensions.includes(fileExtension)) {
           const imageName = Date.now() + path.extname(req.file.originalname)
-          const imagePath = path.join(__dirname, 'images', '600' + imageName)
+          // const imagePath = path.join(__dirname, 'images', '600' + imageName)
           const image600 = await sharp(req.file.buffer)
             .resize({ width: 540, height: 600 })
             // .toFormat('png')
-            // .toFile('./images/' + 600 + imageName)
-            .toFile(imagePath)
+            .toFile('./images/' + 600 + imageName)
+          // .toFile(imagePath)
 
           if (image600) {
             await bouquetModel.findByIdAndUpdate(bouquetId, {

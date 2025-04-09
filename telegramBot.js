@@ -4,6 +4,7 @@ import User from './models/userModel.js'
 import Customer from './models/customerModel.js'
 import Order from './models/orderModel.js'
 import languages from './languages/index.js'
+import fs from 'fs'
 
 export const bots = {} // Xotirada botlarni saqlash
 
@@ -82,10 +83,10 @@ const createBot = async (telegramToken, user) => {
       // await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
       await bot.sendMessage(chatId, languages[lang].platform(botName.first_name))
 
-      await bot.sendPhoto(chatId, 'https://floria.uz/images/6001744178613597.jpg', {
+      await bot.sendPhoto(chatId, 'https://floria.uz/images/6001744173276522.jpg', {
         caption: 'hello',
       })
-
+      // 'https://floria.uz/images/6001744173276522.jpg'
       if (customer?.phone) {
         const repaymentOrder = await Order.findOne({
           customerId: customer._id,
