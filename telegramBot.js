@@ -23,12 +23,15 @@ const createBot = async (telegramToken, user) => {
   bot.setMyCommands([
     {
       command: '/start',
-      description: `${languages['uz'].seebouquets}\n${languages['ru'].seebouquets}`,
+      description: `${languages['uz'].seebouquets} \n${languages['ru'].seebouquets}`,
     },
-    { command: '/deleteorder', description: 'Zakazni bekor qilish\nОтмена заказа' },
-    { command: '/userinfo', description: "Bot egasi haqida ma'lumot\nИнформация о владельце бота" },
-    { command: '/cardinfo', description: "Karta haqida ma'lumot\nИнформация о карте" },
-    { command: '/changelanguage', description: "Tilni o'zgartirish\nИзменить язык" },
+    { command: '/deleteorder', description: 'Zakazni bekor qilish \nОтмена заказа' },
+    {
+      command: '/userinfo',
+      description: "Bot egasi haqida ma'lumot \nИнформация о владельце бота",
+    },
+    { command: '/cardinfo', description: "Karta haqida ma'lumot \nИнформация о карте" },
+    { command: '/changelanguage', description: "Tilni o'zgartirish \nИзменить язык" },
   ])
 
   const web_app = lang => {
