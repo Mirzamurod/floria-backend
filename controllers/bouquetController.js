@@ -107,16 +107,17 @@ const bouquet = {
 
     try {
       if (req.file) {
-        const check1 = req.file.originalname.includes('.jpg')
-        const check2 = req.file.originalname.includes('.jpeg')
-        const check3 = req.file.originalname.includes('.png')
+        const allowedExtensions = ['.jpg', '.jpeg', '.png']
+        const fileExtension = path.extname(req.file.originalname).toLowerCase()
 
-        if (check1 || check2 || check3) {
+        if (allowedExtensions.includes(fileExtension)) {
           const imageName = Date.now() + path.extname(req.file.originalname)
+          const imagePath = path.join(__dirname, 'images', '600' + imageName)
           const image600 = await sharp(req.file.buffer)
             .resize({ width: 540, height: 600 })
-            .toFormat('png')
-            .toFile('./images/' + 600 + imageName)
+            // .toFormat('png')
+            // .toFile('./images/' + 600 + imageName)
+            .toFile(imagePath)
 
           if (image600) {
             const userId = req.user._id
@@ -150,16 +151,17 @@ const bouquet = {
       const existsBouquet = await bouquetModel.findById(bouquetId)
 
       if (req.file) {
-        const check1 = req.file.originalname.includes('.jpg')
-        const check2 = req.file.originalname.includes('.jpeg')
-        const check3 = req.file.originalname.includes('.png')
+        const allowedExtensions = ['.jpg', '.jpeg', '.png']
+        const fileExtension = path.extname(req.file.originalname).toLowerCase()
 
-        if (check1 || check2 || check3) {
+        if (allowedExtensions.includes(fileExtension)) {
           const imageName = Date.now() + path.extname(req.file.originalname)
+          const imagePath = path.join(__dirname, 'images', '600' + imageName)
           const image600 = await sharp(req.file.buffer)
             .resize({ width: 540, height: 600 })
-            .toFormat('png')
-            .toFile('./images/' + 600 + imageName)
+            // .toFormat('png')
+            // .toFile('./images/' + 600 + imageName)
+            .toFile(imagePath)
 
           if (image600) {
             await bouquetModel.findByIdAndUpdate(bouquetId, {
