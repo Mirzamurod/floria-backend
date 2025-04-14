@@ -2,9 +2,12 @@ import expressAsyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
 import path from 'path'
 import sharp from 'sharp'
-import { existsSync, unlinkSync } from 'fs'
+import { v4 as uuidv4 } from 'uuid'
 import bouquetModel from './../models/bouquetModel.js'
 import userModel from '../models/userModel.js'
+import minioClient from '../utils/minioClient.js'
+import getPresignedUrl from '../utils/presignedUrl.js'
+import { bucketName } from '../utils/constans.js'
 
 const bouquet = {
   /**
@@ -31,9 +34,24 @@ const bouquet = {
         .skip(+limit * (+page - 1))
         .populate([{ path: 'category', model: 'Category' }])
 
+      let data = []
+      for (const item of bouquets) {
+        data.push({
+          _id: item._id,
+          price: item.price,
+          name: item.name,
+          info: item.info,
+          block: item.block,
+          category: item.category,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          image: await getPresignedUrl(item.image),
+        })
+      }
+
       res.status(200).json({
         page,
-        data: bouquets,
+        data,
         pageLists: Math.ceil(totalCount / limit) || 1,
         count: totalCount,
       })
@@ -66,9 +84,24 @@ const bouquet = {
           .skip(+limit * (+page - 1))
           .populate([{ path: 'category', model: 'Category' }])
 
+        let data = []
+        for (const item of bouquets) {
+          data.push({
+            _id: item._id,
+            price: item.price,
+            name: item.name,
+            info: item.info,
+            block: item.block,
+            category: item.category,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            image: await getPresignedUrl(item.image),
+          })
+        }
+
         res.status(200).json({
           page,
-          data: bouquets,
+          data,
           pageLists: Math.ceil(totalCount / limit) || 1,
           count: totalCount,
         })
@@ -87,7 +120,20 @@ const bouquet = {
     try {
       const bouquetId = req.params.id
       const bouquet = await bouquetModel.findOne({ userId: req.user._id, _id: bouquetId })
-      if (bouquet) res.status(200).json({ data: bouquet })
+      if (bouquet)
+        res.status(200).json({
+          data: {
+            _id: bouquet._id,
+            price: bouquet.price,
+            name: bouquet.name,
+            info: bouquet.info,
+            block: bouquet.block,
+            category: bouquet.category,
+            createdAt: bouquet.createdAt,
+            updatedAt: bouquet.updatedAt,
+            image: await getPresignedUrl(bouquet.image),
+          },
+        })
       else res.status(400).json({ success: false, message: 'notfoundbouquet' })
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -110,23 +156,46 @@ const bouquet = {
         const allowedExtensions = ['.jpg', '.jpeg', '.png']
         const fileExtension = path.extname(req.file.originalname).toLowerCase()
 
-        if (allowedExtensions.includes(fileExtension)) {
-          const imageName = Date.now() + path.extname(req.file.originalname)
-          const image600 = await sharp(req.file.buffer)
-            .resize({ width: 540, height: 600 })
-            // .toFormat('png')
-            .toFile('./images/' + 600 + imageName)
-
-          if (image600) {
-            const userId = req.user._id
-            await bouquetModel.create({
-              ...req.body,
-              userId,
-              image: `${process.env.IMAGE_URL}600${imageName}`,
-            })
-            res.status(201).json({ success: true, message: 'addedbouquet' })
-          }
+        if (!allowedExtensions.includes(fileExtension)) {
+          return res.status(400).json({ success: false, message: 'Ruxsat etilmagan format' })
         }
+
+        const imageName = `bouquets/${uuidv4()}${fileExtension}`
+
+        const resizedImageBuffer = await sharp(req.file.buffer)
+          .resize({ width: 540, height: 600 })
+          .toBuffer()
+
+        await minioClient.putObject(
+          bucketName,
+          imageName,
+          resizedImageBuffer,
+          resizedImageBuffer.length,
+          { 'Content-Type': req.file.mimetype }
+        )
+
+        const userId = req.user._id
+        await bouquetModel.create({ ...req.body, userId, image: imageName })
+
+        res.status(201).json({ success: true, message: 'addedbouquet' })
+
+        // if (allowedExtensions.includes(fileExtension)) {
+        //   const imageName = Date.now() + path.extname(req.file.originalname)
+        //   const image600 = await sharp(req.file.buffer)
+        //     .resize({ width: 540, height: 600 })
+        //     // .toFormat('png')
+        //     .toFile('./images/' + 600 + imageName)
+
+        //   if (image600) {
+        //     const userId = req.user._id
+        //     await bouquetModel.create({
+        //       ...req.body,
+        //       userId,
+        //       image: `${process.env.IMAGE_URL}600${imageName}`,
+        //     })
+        //     res.status(201).json({ success: true, message: 'addedbouquet' })
+        //   }
+        // }
       }
     } catch (error) {
       res.status(400).json({ success: false, message: error.message })
@@ -152,31 +221,53 @@ const bouquet = {
         const allowedExtensions = ['.jpg', '.jpeg', '.png']
         const fileExtension = path.extname(req.file.originalname).toLowerCase()
 
-        if (allowedExtensions.includes(fileExtension)) {
-          const imageName = Date.now() + path.extname(req.file.originalname)
-          const image600 = await sharp(req.file.buffer)
-            .resize({ width: 540, height: 600 })
-            // .toFormat('png')
-            .toFile('./images/' + 600 + imageName)
-
-          if (image600) {
-            await bouquetModel.findByIdAndUpdate(bouquetId, {
-              ...req.body,
-              image: `${process.env.IMAGE_URL}600${imageName}`,
-            })
-
-            const imageUrl = './images/'
-            // const image = existsBouquet?.image?.split('/')
-            // fs.unlink(imageUrl + image[image.length - 1])
-            const image =
-              imageUrl +
-              existsBouquet?.image?.split('/')[existsBouquet?.image?.split('/').length - 1]
-            if (existsSync(image)) unlinkSync(image)
-            else console.log('❌ Fayl topilmadi:', image)
-
-            res.status(200).json({ success: true, message: 'editedbouquet' })
-          }
+        if (!allowedExtensions.includes(fileExtension)) {
+          return res.status(400).json({ success: false, message: 'Ruxsat etilmagan format' })
         }
+
+        const imageName = `bouquets/${uuidv4()}${fileExtension}`
+
+        const resizedImageBuffer = await sharp(req.file.buffer)
+          .resize({ width: 540, height: 600 })
+          .toBuffer()
+
+        await minioClient.putObject(
+          bucketName,
+          imageName,
+          resizedImageBuffer,
+          resizedImageBuffer.length,
+          { 'Content-Type': req.file.mimetype }
+        )
+
+        await bouquetModel.findByIdAndUpdate(bouquetId, {
+          ...req.body,
+          image: imageName,
+        })
+
+        await minioClient.removeObject('floria', existsBouquet.image)
+
+        // if (allowedExtensions.includes(fileExtension)) {
+        //   const imageName = Date.now() + path.extname(req.file.originalname)
+        //   const image600 = await sharp(req.file.buffer)
+        //     .resize({ width: 540, height: 600 })
+        //     .toFile('./images/' + 600 + imageName)
+
+        //   if (image600) {
+        //     await bouquetModel.findByIdAndUpdate(bouquetId, {
+        //       ...req.body,
+        //       image: `${process.env.IMAGE_URL}600${imageName}`,
+        //     })
+
+        //     const imageUrl = './images/'
+        //     const image =
+        //       imageUrl +
+        //       existsBouquet?.image?.split('/')[existsBouquet?.image?.split('/').length - 1]
+        //     if (existsSync(image)) unlinkSync(image)
+        //     else console.log('❌ Fayl topilmadi:', image)
+
+        res.status(200).json({ success: true, message: 'editedbouquet' })
+        //   }
+        // }
       } else {
         await bouquetModel.findByIdAndUpdate(bouquetId, req.body)
         res.status(200).json({ success: true, message: 'editedbouquet' })
@@ -210,11 +301,13 @@ const bouquet = {
     try {
       const bouquetId = req.params.id
       const deletedBouquet = await bouquetModel.findByIdAndDelete(bouquetId)
-      const imageUrl = './images/'
-      const image =
-        imageUrl + deletedBouquet?.image?.split('/')[deletedBouquet?.image?.split('/').length - 1]
-      if (existsSync(image)) unlinkSync(image)
-      else console.log('❌ Fayl topilmadi:', image)
+
+      await minioClient.removeObject('floria', deletedBouquet.image)
+      // const imageUrl = './images/'
+      // const image =
+      //   imageUrl + deletedBouquet?.image?.split('/')[deletedBouquet?.image?.split('/').length - 1]
+      // if (existsSync(image)) unlinkSync(image)
+      // else console.log('❌ Fayl topilmadi:', image)
 
       res.status(200).json({ success: true, message: 'deletedbouquet' })
     } catch (error) {

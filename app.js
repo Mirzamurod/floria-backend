@@ -16,6 +16,8 @@ import {
 } from './routes/index.js'
 import { restoreBots } from './telegramBot.js'
 import { checkOrders } from './checkOrders.js'
+import minioClient from './utils/minioClient.js'
+import { bucketName } from './utils/constans.js'
 
 const app = express()
 dotenv.config()
@@ -28,6 +30,20 @@ app.use(cors())
 app.use(express.json({ limit: '20mb' }))
 app.use(express.urlencoded({ limit: '20mb', extended: false }))
 app.use(cookieParser())
+
+minioClient.bucketExists(bucketName, (err, exists) => {
+  if (err) {
+    console.error('Xatolik:', err)
+    return
+  }
+
+  if (!exists)
+    minioClient.makeBucket(bucketName, 'us-east-1', err => {
+      if (err) return console.error('Bucket yaratishda xatolik:', err)
+      console.log('Bucket yaratildi')
+    })
+  else console.log('Bucket allaqachon mavjud')
+})
 
 // `__dirname` ni qayta yaratish
 const __filename = fileURLToPath(import.meta.url)
