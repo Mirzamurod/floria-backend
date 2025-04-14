@@ -8,7 +8,7 @@ const getPresignedUrl = async filename => {
     60 // URL amal qilish vaqti (sekundlarda) – bu yerda 1 daqiqa
   )
 
-  return url
+  return url.replace(':9000', '')
 }
 
 export default getPresignedUrl
