@@ -244,7 +244,7 @@ const bouquet = {
           image: imageName,
         })
 
-        await minioClient.removeObject('floria', existsBouquet.image)
+        await minioClient.removeObject(bucketName, existsBouquet.image)
 
         // if (allowedExtensions.includes(fileExtension)) {
         //   const imageName = Date.now() + path.extname(req.file.originalname)
@@ -302,7 +302,7 @@ const bouquet = {
       const bouquetId = req.params.id
       const deletedBouquet = await bouquetModel.findByIdAndDelete(bouquetId)
 
-      await minioClient.removeObject('floria', deletedBouquet.image)
+      await minioClient.removeObject(bucketName, deletedBouquet.image)
       // const imageUrl = './images/'
       // const image =
       //   imageUrl + deletedBouquet?.image?.split('/')[deletedBouquet?.image?.split('/').length - 1]

@@ -10,7 +10,7 @@ const getPresignedUrl = async filename => {
 
   // return url.replace(':9000', '').replace('http://', 'https://')
   // localhost:9000 ni floria.uz/images ga almashtirish
-  return url.replace('http://localhost:9000/', 'https://floria.uz/')
+  return url.replace('http://localhost:9000/', process.env.MINIO_EXTERNAL_URL)
 }
 
 export default getPresignedUrl
