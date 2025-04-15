@@ -8,7 +8,9 @@ const getPresignedUrl = async filename => {
     60 // URL amal qilish vaqti (sekundlarda) – bu yerda 1 daqiqa
   )
 
-  return url.replace(':9000', '').replace('http://', 'https://')
+  // return url.replace(':9000', '').replace('http://', 'https://')
+  // localhost:9000 ni floria.uz/images ga almashtirish
+  return url.replace('http://localhost:9000/', 'https://floria.uz/')
 }
 
 export default getPresignedUrl
