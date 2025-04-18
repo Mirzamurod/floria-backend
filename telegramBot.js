@@ -4,6 +4,7 @@ import User from './models/userModel.js'
 import Customer from './models/customerModel.js'
 import Order from './models/orderModel.js'
 import languages from './languages/index.js'
+import getPresignedUrl from './utils/presignedUrl.js'
 
 export const bots = {} // Xotirada botlarni saqlash
 
@@ -268,7 +269,9 @@ const createBot = async (telegramToken, user) => {
 
           if (getOrder?.bouquet?.bouquets?.length) {
             for (const item of getOrder?.bouquet?.bouquets) {
-              await bot.sendPhoto(chatId, item?.bouquetId?.image, {
+              await bot.sendMessage(chatId, item?.bouquetId?.orgImage)
+              await bot.sendMessage(chatId, await getPresignedUrl(item?.bouquetId?.orgImage))
+              await bot.sendPhoto(chatId, await getPresignedUrl(item?.bouquetId?.orgImage), {
                 caption: `${item.name ? item.name + ' - ' : ''}${item.qty}x: ${getSum(item.price)}`,
               })
             }

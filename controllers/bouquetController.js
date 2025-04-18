@@ -95,6 +95,7 @@ const bouquet = {
             category: item.category,
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
+            orgImage: item.image,
             image: await getPresignedUrl(item.image),
           })
         }
