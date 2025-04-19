@@ -83,6 +83,11 @@ const createBot = async (telegramToken, user) => {
       // await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
       await bot.sendMessage(chatId, languages[lang].platform(botName.first_name))
 
+      await bot.sendMessage(
+        chatId,
+        await getPresignedUrl('bouquets/2b72e3ab-3974-47eb-9b75-5199c250ecf7.jpg')
+      )
+
       if (customer?.phone) {
         const repaymentOrder = await Order.findOne({
           customerId: customer._id,
@@ -269,9 +274,8 @@ const createBot = async (telegramToken, user) => {
 
           if (getOrder?.bouquet?.bouquets?.length) {
             for (const item of getOrder?.bouquet?.bouquets) {
-              await bot.sendMessage(chatId, item?.bouquetId?.orgImage)
-              await bot.sendMessage(chatId, await getPresignedUrl(item?.bouquetId?.orgImage))
-              await bot.sendPhoto(chatId, await getPresignedUrl(item?.bouquetId?.orgImage), {
+              console.log(item?.bouquetId?.image)
+              await bot.sendPhoto(chatId, await getPresignedUrl(item?.bouquetId?.image), {
                 caption: `${item.name ? item.name + ' - ' : ''}${item.qty}x: ${getSum(item.price)}`,
               })
             }
