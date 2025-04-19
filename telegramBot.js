@@ -83,11 +83,6 @@ const createBot = async (telegramToken, user) => {
       // await bot.sendMessage(chatId, `${botName.first_name} platformasiga xush kelibsiz.`)
       await bot.sendMessage(chatId, languages[lang].platform(botName.first_name))
 
-      await bot.sendMessage(
-        chatId,
-        await getPresignedUrl('bouquets/2b72e3ab-3974-47eb-9b75-5199c250ecf7.jpg')
-      )
-
       if (customer?.phone) {
         const repaymentOrder = await Order.findOne({
           customerId: customer._id,
