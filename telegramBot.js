@@ -5,6 +5,9 @@ import Customer from './models/customerModel.js'
 import Order from './models/orderModel.js'
 import languages from './languages/index.js'
 import getPresignedUrl from './utils/presignedUrl.js'
+import { v4 as uuidv4 } from 'uuid'
+import minioClient from './utils/minioClient.js'
+import { bucketName } from './utils/constans.js'
 
 export const bots = {} // Xotirada botlarni saqlash
 
@@ -77,6 +80,7 @@ const createBot = async (telegramToken, user) => {
     const customer = await Customer.findOne({ chatId })
     const photoArray = msg.photo
     const getLocation = msg.location
+    const imageUrl = `payment/${uuidv4()}`
     const lang = customer?.lang ? customer?.lang : msg?.from?.language_code === 'ru' ? 'ru' : 'uz'
 
     if (text === '/start') {
@@ -158,12 +162,21 @@ const createBot = async (telegramToken, user) => {
         status: 'new',
       }).sort({ createdAt: -1 })
 
-      if (repaymentOrder) {
-        if (photoArray[2].file_id && repaymentOrder && repaymentOrder.prepaymentNumber === 1) {
+      if (photoArray[2].file_id && repaymentOrder) {
+        const fileLink = await bot.getFileLink(photoArray[2].file_id)
+
+        const response = await axios.get(fileLink, { responseType: 'arraybuffer' })
+        const buffer = Buffer.from(response.data)
+
+        const objectName = `${imageUrl}${photoArray[2].file_id}.jpg`
+
+        await minioClient.putObject(bucketName, objectName, buffer)
+
+        if (repaymentOrder && repaymentOrder.prepaymentNumber === 1) {
           await Order.findByIdAndUpdate(
             repaymentOrder._id,
             {
-              prepaymentImage: await bot.getFileLink(photoArray[2].file_id),
+              prepaymentImage: objectName,
               prepaymentNumber: 2,
               payment: 'pending',
             },
@@ -175,7 +188,7 @@ const createBot = async (telegramToken, user) => {
           if (repaymentOrder && telegramId) {
             let my_text = `${languages['uz'].repayment(repaymentOrder.orderNumber)}(${
               process.env.FRONT_URL
-            }view/${repaymentOrder._id})%0A%0A${languages['ru'].repayment(
+            }view/${repaymentOrder._id})\n${languages['ru'].repayment(
               repaymentOrder.orderNumber
             )}(${process.env.FRONT_URL}view/${repaymentOrder._id})`
             await axios.post(`https://api.telegram.org/bot${telegramToken}/sendPhoto`, {
@@ -194,11 +207,11 @@ const createBot = async (telegramToken, user) => {
           status: 'new',
         }).sort({ createdAt: -1 })
 
-        if (photoArray[2].file_id && existOrder) {
+        if (existOrder) {
           await Order.findByIdAndUpdate(
             existOrder._id,
             {
-              prepaymentImage: await bot.getFileLink(photoArray[2].file_id),
+              prepaymentImage: objectName,
               prepaymentNumber: 1,
               payment: 'pending',
             },
@@ -210,7 +223,7 @@ const createBot = async (telegramToken, user) => {
           await bot.sendMessage(chatId, languages[lang].seebouquetsmore, web_app(lang))
 
           if (existOrder && telegramId) {
-            let my_text = `${languages['uz'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})%0A%0A${languages['ru'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})`
+            let my_text = `${languages['uz'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})\n${languages['ru'].neworder}(${process.env.FRONT_URL}view/${existOrder._id})`
             await axios.post(`https://api.telegram.org/bot${telegramToken}/sendPhoto`, {
               chat_id: telegramId,
               photo: photoArray[2].file_id,
